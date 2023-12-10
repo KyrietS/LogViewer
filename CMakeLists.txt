@@ -29,6 +29,12 @@ target_include_directories(LogAnnihilator PRIVATE ${fltk_SOURCE_DIR})
 target_include_directories(LogAnnihilator PRIVATE ${fltk_BINARY_DIR})
 target_link_libraries(LogAnnihilator fltk)
 
+if (MSVC)
+    target_compile_options(LogAnnihilator PRIVATE /W4)
+else()
+    target_compile_options(LogAnnihilator PRIVATE -Wall -Wextra -pedantic)
+endif()
+
 # Move all FLTK targets to the Dependencies folder
 set(FLTK_TARGETS fltk fltk_images fltk_jpeg fltk_png fltk_z fltk_forms fltk_gl uninstall)
 foreach(fltk_target ${FLTK_TARGETS})

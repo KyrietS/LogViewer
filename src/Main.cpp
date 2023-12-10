@@ -3,7 +3,7 @@
 #include <FL/Fl_Button.H>
 #include <FL/Fl_Window.H>
 
-int main(int argc, char* argv[])
+int main()
 {
     Fl::get_system_colors();
 
