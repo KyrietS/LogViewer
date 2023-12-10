@@ -30,7 +30,13 @@ target_include_directories(LogAnnihilator PRIVATE ${fltk_BINARY_DIR})
 target_link_libraries(LogAnnihilator fltk)
 
 # Move all FLTK targets to the Dependencies folder
-set(FLTK_TARGETS fltk fltk_images fltk_forms fltk_gl fltk_jpeg fltk_png fltk_z uninstall)
+set(FLTK_TARGETS fltk fltk_images fltk_forms fltk_gl uninstall)
 foreach(fltk_target ${FLTK_TARGETS})
     set_target_properties(${fltk_target} PROPERTIES FOLDER "Dependencies")
+endforeach()
+
+# Move all fltk_images dependencies to the Dependencies folder
+get_target_property(dependencies fltk_images INTERFACE_LINK_LIBRARIES)
+foreach(dependency ${dependencies})
+    set_target_properties(${dependency} PROPERTIES FOLDER "Dependencies")
 endforeach()
