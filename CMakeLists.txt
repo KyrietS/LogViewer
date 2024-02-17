@@ -2,9 +2,9 @@ cmake_minimum_required(VERSION 3.15)
 include(FetchContent)
 
 FetchContent_Declare(
-    fltk
-    GIT_REPOSITORY https://github.com/fltk/fltk.git
-    GIT_TAG        094ee9e953a7361093a2fa0cff90ee8ce6de8051
+        fltk
+        GIT_REPOSITORY https://github.com/fltk/fltk.git
+        GIT_TAG 094ee9e953a7361093a2fa0cff90ee8ce6de8051
 )
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
@@ -19,7 +19,7 @@ set(FLTK_BUILD_FLUID OFF)
 set(FLTK_BUILD_FLTK_OPTIONS OFF)
 set(FLTK_BUILD_TEST OFF)
 FetchContent_MakeAvailable(
-    fltk
+        fltk
 )
 
 file(GLOB_RECURSE SOURCES "src/**.cpp" "src/**.hpp")
@@ -31,14 +31,21 @@ target_link_libraries(LogAnnihilator fltk)
 
 if (MSVC)
     target_compile_options(LogAnnihilator PRIVATE /W4)
-else()
+else ()
     target_compile_options(LogAnnihilator PRIVATE -Wall -Wextra -pedantic)
-endif()
+endif ()
 
 # Move all FLTK targets to the Dependencies folder
 set(FLTK_TARGETS fltk fltk_images fltk_jpeg fltk_png fltk_z fltk_forms fltk_gl uninstall)
-foreach(fltk_target ${FLTK_TARGETS})
+foreach (fltk_target ${FLTK_TARGETS})
     if (TARGET ${fltk_target})
         set_target_properties(${fltk_target} PROPERTIES FOLDER "Dependencies")
-    endif()
-endforeach()
+    endif ()
+endforeach ()
+
+# Copy pan-tadeusz.txt to binary folder after compiling
+add_custom_command(TARGET LogAnnihilator POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy
+        ${CMAKE_CURRENT_SOURCE_DIR}/pan-tadeusz.txt
+        $<TARGET_FILE_DIR:LogAnnihilator>)
+#file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/pan-tadeusz.txt DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
