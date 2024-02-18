@@ -16,7 +16,14 @@ class LogDisplay : public Fl_Group
     void draw() override;
     int handle(int event) override;
     void drawText();
+    void drawSelection(size_t startPos, size_t endPos, int baseline);
     void recalcSize();
+    int getRowByCharPos(unsigned long long charPos);
+    void setSelectionStart(int mouseX, int mouseY);
+    void setSelectionEnd(int mouseX, int mouseY);
+    void selectWord(int mouseX, int mouseY);
+    int getRowByMousePos(int mouse_y);
+    int getColumnByMousePos(int row, int mouse_x);
 
     static void vScrollCallback(Fl_Scrollbar* w, LogDisplay* pThis);
 
@@ -31,6 +38,8 @@ class LogDisplay : public Fl_Group
 
     int firstLine = 0;
     std::vector<std::pair<size_t, size_t>> lines;
+
+    std::pair<size_t, size_t> selection = {0, 2}; // start, end
 
     Fl_Font textFont;
     Fl_Fontsize textSize;
