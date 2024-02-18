@@ -69,150 +69,102 @@ const char* LogDisplay::getData() const
 
 void LogDisplay::draw()
 {
-    std::cout << "LogDisplay::draw()" << std::endl;
-    fl_push_clip(x(), y(), w(), h()); // prevent drawing outside widget area
-
     recalcSize();
-
-    Fl_Color bgcolor = color();
-    // fl_rectf(x(), y(), w(), h(), bgcolor);
-    if (damage() & FL_DAMAGE_ALL)
+    fl_push_clip(x(), y(), w(), h()); // prevent drawing outside widget area
     {
-        fl_rectf(x(), y(), w(), h(), bgcolor);
-        draw_box();
-    }
+        if (damage() & FL_DAMAGE_ALL)
+        {
+            drawBackground();
+            vScrollBar->damage(FL_DAMAGE_ALL);
+        }
+        if (damage() & FL_DAMAGE_SCROLL)
+        {
+            vScrollBar->damage(FL_DAMAGE_SCROLL);
+        }
+        update_child(*vScrollBar);
 
-    // draw the scrollbars
-    if (damage() & (FL_DAMAGE_ALL))
-    {
-        vScrollBar->damage(FL_DAMAGE_ALL);
-        std::cout << "damage: " << (int)damage() << std::endl;
+        drawText();
     }
-    if (damage() & FL_DAMAGE_SCROLL)
-    {
-        std::cout << "damage2: " << (int)damage() << std::endl;
-        vScrollBar->damage(FL_DAMAGE_SCROLL);
-    }
-    update_child(*vScrollBar);
-
-    drawText();
-
     fl_pop_clip();
 }
-
-int LogDisplay::handle(int event)
+void LogDisplay::drawBackground() const
 {
-    bool dragging = false; // TODO: not implemented
+    fl_rectf(x(), y(), w(), h(), color());
+    draw_box();
+}
 
-    if (!Fl::event_inside(textArea.x, textArea.y, textArea.w, textArea.h) && !dragging && event != FL_LEAVE &&
-        event != FL_ENTER && event != FL_MOVE && event != FL_FOCUS && event != FL_UNFOCUS && event != FL_KEYBOARD &&
-        event != FL_KEYUP)
+int LogDisplay::handle(const int event)
+{
+    if (!Fl::event_inside(textArea.x, textArea.y, textArea.w, textArea.h) && event != FL_LEAVE && event != FL_ENTER &&
+        event != FL_MOVE && event != FL_FOCUS && event != FL_UNFOCUS && event != FL_KEYBOARD && event != FL_KEYUP)
     {
         return Fl_Group::handle(event);
     }
 
+    // The widget is not active
     if (!active_r())
     {
         return 0;
     }
 
+    return static_cast<int>(handleEvent(event));
+}
+
+LogDisplay::EventStatus LogDisplay::handleEvent(const int event)
+{
     switch (event)
     {
     case FL_PUSH:
-        if (active_r())
-        {
-            if (Fl::event_inside(textArea.x, textArea.y, textArea.w, textArea.h))
-            {
-                bool doubleClick = Fl::event_clicks();
-                if (doubleClick)
-                    selectWord(Fl::event_x(), Fl::event_y());
-                else
-                    setSelectionStart(Fl::event_x(), Fl::event_y());
-                damage(FL_DAMAGE_SCROLL);
-                return 1;
-            }
-        }
-        return 0;
+        return handleMousePressed();
+
     case FL_DRAG:
-        if (Fl::event_inside(textArea.x, textArea.y, textArea.w, textArea.h))
-        {
-            setSelectionEnd(Fl::event_x(), Fl::event_y());
-            damage(FL_DAMAGE_SCROLL);
-            return 1;
-        }
+        return handleMouseDragged();
+
     case FL_MOUSEWHEEL:
-        if (active_r())
-        {
-            return vScrollBar->handle(event);
-            // int delta = Fl::event_dy();
-            // firstLine += delta;
-            // firstLine = firstLine < 0 ? 0 : firstLine;
-            // vScrollBar->value(firstLine);
-            // redraw();
-            // return 1;
-        }
-        return 0;
+        return handleMouseScroll(event);
+
     case FL_ENTER:
     case FL_MOVE:
-        if (active_r())
-        {
-            if (Fl::event_inside(textArea.x, textArea.y, textArea.w, textArea.h))
-            {
-                window()->cursor(FL_CURSOR_INSERT);
-            }
-            else
-            {
-                window()->cursor(FL_CURSOR_DEFAULT);
-            }
-            return 1;
-        }
-        return 0;
+        return handleMouseMoved();
 
     case FL_LEAVE:
     case FL_HIDE:
-        if (active_r() && window())
-        {
-            window()->cursor(FL_CURSOR_DEFAULT);
-            return 1;
-        }
-        return 0;
-    }
+        setCursor(FL_CURSOR_DEFAULT);
+        return EventStatus::Handled;
 
-    return 0;
+    default:
+        return EventStatus::NotHandled;
+    }
 }
 
 void LogDisplay::drawText()
 {
-    std::cout << "LogDisplay::drawText()" << std::endl;
-    int fontHeight = fl_height(textFont, textSize);
+    assert(firstLine < lines.size());
 
-    int Y = textArea.y + fontHeight;
-    int baseline = Y - fl_descent();
     fl_color(textColor);
     fl_font(textFont, textSize);
 
-    auto firstLineIter = firstLine < lines.size() ? lines.begin() + firstLine : lines.end();
-    auto lastLineIter = firstLineIter + std::min(20, (int)(lines.end() - firstLineIter));
-    std::span linesSpan(firstLineIter, lastLineIter);
+    const int fontHeight = fl_height(textFont, textSize);
+    int baseline = textArea.y + fontHeight - fl_descent();
 
-    std::vector<Fl_Color> colors = {
-        FL_RED,      FL_GREEN,      FL_BLUE,      FL_YELLOW,      FL_MAGENTA,      FL_CYAN,
-        FL_DARK_RED, FL_DARK_GREEN, FL_DARK_BLUE, FL_DARK_YELLOW, FL_DARK_MAGENTA, FL_DARK_CYAN,
-    };
-    int colorIndex = 0;
-    int offset = textArea.x;
+    const size_t howManyLinesCanFit = textArea.h / fontHeight;
+    const auto howManyLinesToBeDrawn = std::min(howManyLinesCanFit, lines.size() - firstLine);
+
+    using IterDiff = decltype(lines)::difference_type;
+    const auto firstLineIter = lines.begin() + static_cast<IterDiff>(firstLine);
+    const auto lastLineIter = firstLineIter + static_cast<IterDiff>(howManyLinesToBeDrawn);
+    const std::span linesSpan(firstLineIter, lastLineIter);
 
     fl_push_clip(textArea.x, textArea.y, textArea.w, textArea.h);
 
-    for (const auto& line : linesSpan)
+    for (const auto& [startPos, endPos] : linesSpan)
     {
-        const auto& startPos = line.first;
-        const auto& endPos = line.second;
         const auto& lineLength = endPos - startPos;
+
         // Clear line
         Fl_Color bgcolor = color();
         fl_color(bgcolor);
-        fl_rectf(offset, baseline - fontHeight + fl_descent(), textArea.w, fontHeight);
+        fl_rectf(textArea.x, baseline - fontHeight + fl_descent(), textArea.w, fontHeight);
 
         // Draw selection background
         drawSelection(startPos, endPos, baseline);
@@ -267,10 +219,63 @@ void LogDisplay::recalcSize()
     textArea.w = W - LEFT_MARGIN - RIGHT_MARGIN - lineNumbWidth - scrollsize;
     textArea.h = H - TOP_MARGIN - BOTTOM_MARGIN;
 
-    // vScrollBar->resize(x() + w() - scrollsize, y(), scrollsize, h());
     vScrollBar->resize(X + W - scrollsize, textArea.y - TOP_MARGIN, scrollsize,
                        textArea.h + TOP_MARGIN + BOTTOM_MARGIN);
 }
+LogDisplay::EventStatus LogDisplay::handleMousePressed()
+{
+    if (Fl::event_inside(textArea.x, textArea.y, textArea.w, textArea.h)) // TODO: Move to separate function
+    {
+        const bool doubleClick = Fl::event_clicks() != 0;
+        if (doubleClick)
+            selectWord(Fl::event_x(), Fl::event_y());
+        else
+            setSelectionStart(Fl::event_x(), Fl::event_y());
+        damage(FL_DAMAGE_SCROLL);
+        return EventStatus::Handled;
+    }
+
+    return EventStatus::NotHandled;
+}
+LogDisplay::EventStatus LogDisplay::handleMouseDragged()
+{
+    if (Fl::event_inside(textArea.x, textArea.y, textArea.w, textArea.h))
+    {
+        setSelectionEnd(Fl::event_x(), Fl::event_y());
+        damage(FL_DAMAGE_SCROLL);
+        return EventStatus::Handled;
+    }
+
+    return EventStatus::NotHandled;
+}
+LogDisplay::EventStatus LogDisplay::handleMouseScroll(const int event) const
+{
+    if (vScrollBar->handle(event))
+    {
+        return EventStatus::Handled;
+    }
+
+    return EventStatus::NotHandled;
+}
+LogDisplay::EventStatus LogDisplay::handleMouseMoved() const
+{
+    if (Fl::event_inside(textArea.x, textArea.y, textArea.w, textArea.h))
+    {
+        setCursor(FL_CURSOR_INSERT);
+        return EventStatus::Handled;
+    }
+
+    setCursor(FL_CURSOR_DEFAULT);
+    return EventStatus::NotHandled;
+}
+void LogDisplay::setCursor(const Fl_Cursor cursorType) const
+{
+    if (window())
+    {
+        window()->cursor(cursorType);
+    }
+}
+
 int LogDisplay::getRowByCharPos(unsigned long long charPos)
 {
     for (int i = 0; i < lines.size(); i++)
