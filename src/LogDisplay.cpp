@@ -78,21 +78,28 @@ void LogDisplay::draw()
     recalcSize();
     fl_push_clip(x(), y(), w(), h()); // prevent drawing outside widget area
     {
-        if (damage() & FL_DAMAGE_ALL)
+        // Draw to offscreen buffer to prevent flickering (double buffering)
+        const Fl_Offscreen offscreenBuffer = fl_create_offscreen(w(), h());
+        fl_begin_offscreen(offscreenBuffer);
         {
             drawBackground();
-            vScrollBar->damage(FL_DAMAGE_ALL);
-        }
-        if (damage() & FL_DAMAGE_SCROLL)
-        {
-            vScrollBar->damage(FL_DAMAGE_SCROLL);
-        }
-        update_child(*vScrollBar);
 
-        drawText();
+            vScrollBar->damage(FL_DAMAGE_ALL);
+            update_child(*vScrollBar);
+
+            drawText();
+        }
+        fl_end_offscreen();
+
+        // Copy offscreen buffer to the screen (swap buffers)
+        fl_copy_offscreen(x(), y(), w(), h(), offscreenBuffer, 0, 0);
+
+        // Clean up
+        fl_delete_offscreen(offscreenBuffer);
     }
     fl_pop_clip();
 }
+
 void LogDisplay::drawBackground() const
 {
     fl_rectf(x(), y(), w(), h(), color());
