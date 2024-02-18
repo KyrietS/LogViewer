@@ -14,6 +14,13 @@ constexpr int TOP_MARGIN = 1;
 constexpr int BOTTOM_MARGIN = 1;
 constexpr int LEFT_MARGIN = 3;
 constexpr int RIGHT_MARGIN = 3;
+
+bool isWordSeparator(const char c)
+{
+    const std::string wordSeparator = " \n\t,.;:!?-()[]{}'\"/\\|<>+=*~`@#$%^&";
+    return wordSeparator.find(c) != std::string::npos;
+}
+
 } // namespace
 
 LogDisplay::LogDisplay(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l)
@@ -314,12 +321,12 @@ void LogDisplay::selectWord(const int mouseX, const int mouseY)
     size_t selectionBegin = selectionEndIndex;
     size_t selectionEnd = selectionEndIndex;
     // Find word start
-    while (selectionBegin > 0 && data[selectionBegin - 1] != ' ' && data[selectionBegin - 1] != '\n')
+    while (selectionBegin > 0 && !isWordSeparator(data[selectionBegin - 1]))
     {
         selectionBegin--;
     }
     // Find word end
-    while (selectionEnd < dataSize && data[selectionEnd] != ' ' && data[selectionEnd] != '\n')
+    while (selectionEnd < dataSize && !isWordSeparator(data[selectionEnd]))
     {
         selectionEnd++;
     }
