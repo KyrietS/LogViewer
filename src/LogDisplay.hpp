@@ -25,7 +25,7 @@ class LogDisplay : public Fl_Group
   private:
     void drawBackground() const;
     void drawText();
-    void drawSelection(size_t startPos, size_t endPos, int baseline);
+    void drawSelection(size_t startPos, size_t endPos, int baseline) const;
     void recalcSize();
 
     EventStatus handleEvent(int event);
@@ -35,33 +35,44 @@ class LogDisplay : public Fl_Group
     EventStatus handleMouseMoved() const;
 
     void setCursor(Fl_Cursor cursorType) const;
+    int howManyLinesCanFit() const;
+    int getFirstLineIdx() const;
+    int getLineHeight() const;
 
-    int getRowByCharPos(unsigned long long charPos);
     void setSelectionStart(int mouseX, int mouseY);
     void setSelectionEnd(int mouseX, int mouseY);
     void selectWord(int mouseX, int mouseY);
-    int getRowByMousePos(int mouse_y);
-    int getColumnByMousePos(int row, int mouse_x);
+    size_t getCharIdxFromMousePos(int mouseX, int mouseY) const;
+    size_t getRowByMousePos(int mouseY) const;
+    size_t getCharIdxFromRowAndMousePos(int row, int mouseX) const;
 
     static void vScrollCallback(Fl_Scrollbar* w, LogDisplay* pThis);
 
-  private:
+    // Text area within the widget
     struct
     {
         int x, y, w, h;
-    } textArea;
+    } textArea{};
 
+    // Text data
     const char* data = nullptr;
     size_t dataSize = 0;
 
-    size_t firstLine = 0; // The top visible line
+    // Text selection
+    struct
+    {
+        size_t begin, end;
+    } selection{0, 0};
+
+    // An array of pairs of line start and end positions.
+    // This helper array is created when the data is set.
     std::vector<std::pair<size_t, size_t>> lines;
 
-    std::pair<size_t, size_t> selection = {0, 2}; // start, end
-
+    // Text properties
     Fl_Font textFont;
     Fl_Fontsize textSize;
     Fl_Color textColor;
 
+    // Child widgets
     Fl_Scrollbar* vScrollBar;
 };

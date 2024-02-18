@@ -31,8 +31,8 @@ int main()
     std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
     fileContent = std::move(content);
 
-    //const char* data = "yyyyyyyyyy\niiTTiiiiiiiii\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n13\n14\n";
-    //logDisplay->setData(data, strlen(data));
+    // const char* data = "yyyyyyyyyy\niiTTiiiiiiiii\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n13\n14\n";
+    // logDisplay->setData(data, strlen(data));
     const char* data = fileContent.c_str();
     logDisplay->setData(data, fileContent.size());
 

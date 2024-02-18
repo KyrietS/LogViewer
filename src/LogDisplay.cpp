@@ -22,7 +22,7 @@ LogDisplay::LogDisplay(int X, int Y, int W, int H, const char* l) : Fl_Group(X, 
     vScrollBar->callback(reinterpret_cast<Fl_Callback*>(vScrollCallback), this);
 
     // TODO: Move to some recalc function
-    vScrollBar->value(1, 20, 1, 100);
+    vScrollBar->value(1, 1, 1, 1);
     vScrollBar->linesize(3);
     vScrollBar->set_visible();
 
@@ -37,9 +37,7 @@ LogDisplay::LogDisplay(int X, int Y, int W, int H, const char* l) : Fl_Group(X, 
     end();
 }
 
-LogDisplay::~LogDisplay()
-{
-}
+LogDisplay::~LogDisplay() = default;
 
 void LogDisplay::setData(const char* data, size_t size)
 {
@@ -59,7 +57,8 @@ void LogDisplay::setData(const char* data, size_t size)
         lineStart = lineEnd;
     }
 
-    vScrollBar->value(1, 20, 1, lines.size());
+    const int numberOfLines = static_cast<int>(lines.size());
+    vScrollBar->value(1, howManyLinesCanFit(), 1, numberOfLines);
 }
 
 const char* LogDisplay::getData() const
@@ -139,16 +138,21 @@ LogDisplay::EventStatus LogDisplay::handleEvent(const int event)
 
 void LogDisplay::drawText()
 {
+    if (data == nullptr)
+    {
+        return;
+    }
+
+    const int firstLine = this->getFirstLineIdx();
     assert(firstLine < lines.size());
 
     fl_color(textColor);
     fl_font(textFont, textSize);
 
-    const int fontHeight = fl_height(textFont, textSize);
-    int baseline = textArea.y + fontHeight - fl_descent();
+    const int lineHeight = getLineHeight();
+    int baseline = textArea.y + lineHeight - fl_descent();
 
-    const size_t howManyLinesCanFit = textArea.h / fontHeight;
-    const auto howManyLinesToBeDrawn = std::min(howManyLinesCanFit, lines.size() - firstLine);
+    const auto howManyLinesToBeDrawn = std::min(static_cast<size_t>(howManyLinesCanFit()), lines.size() - firstLine);
 
     using IterDiff = decltype(lines)::difference_type;
     const auto firstLineIter = lines.begin() + static_cast<IterDiff>(firstLine);
@@ -159,12 +163,12 @@ void LogDisplay::drawText()
 
     for (const auto& [startPos, endPos] : linesSpan)
     {
-        const auto& lineLength = endPos - startPos;
+        const auto& lineLength = static_cast<int>(endPos - startPos);
 
         // Clear line
-        Fl_Color bgcolor = color();
+        const Fl_Color bgcolor = color();
         fl_color(bgcolor);
-        fl_rectf(textArea.x, baseline - fontHeight + fl_descent(), textArea.w, fontHeight);
+        fl_rectf(textArea.x, baseline - lineHeight + fl_descent(), textArea.w, lineHeight);
 
         // Draw selection background
         drawSelection(startPos, endPos, baseline);
@@ -172,19 +176,16 @@ void LogDisplay::drawText()
         // Draw text
         fl_color(textColor);
         fl_draw(data + startPos, lineLength, textArea.x, baseline);
-        baseline += fontHeight;
+        baseline += lineHeight;
     }
 
     fl_pop_clip();
 }
 
-void LogDisplay::drawSelection(size_t startPos, size_t endPos, int baseline)
+void LogDisplay::drawSelection(const size_t startPos, const size_t endPos, int baseline) const
 {
-    // TODO: Duplicated from draw()
-    int fontHeight = fl_height(textFont, textSize);
-
-    auto selectionStart = selection.first;
-    auto selectionEnd = selection.second;
+    auto selectionStart = selection.begin;
+    auto selectionEnd = selection.end;
 
     if (selectionStart > selectionEnd)
         std::swap(selectionStart, selectionEnd);
@@ -193,14 +194,18 @@ void LogDisplay::drawSelection(size_t startPos, size_t endPos, int baseline)
     if (selectionStart < startPos && selectionEnd > startPos)
         selectionStart = startPos;
 
-    const auto selectionLength = selectionEnd - selectionStart;
+    const auto selectionLength = static_cast<int>(selectionEnd - selectionStart);
 
     if (selectionStart >= startPos && selectionStart <= endPos)
     {
-        double selectionOffset = textArea.x + fl_width(data + startPos, selectionStart - startPos);
-        double selectionWidth = selectionEnd > endPos ? textArea.w : fl_width(data + selectionStart, selectionLength);
+        const int lineHeight = getLineHeight();
+        const double selectionOffset =
+            textArea.x + fl_width(data + startPos, static_cast<int>(selectionStart - startPos));
+        const double selectionWidth =
+            selectionEnd > endPos ? textArea.w : fl_width(data + selectionStart, selectionLength);
         fl_color(FL_SELECTION_COLOR);
-        fl_rectf(selectionOffset, baseline - fontHeight + fl_descent(), (int)selectionWidth, fontHeight);
+        fl_rectf(static_cast<int>(selectionOffset), baseline - lineHeight + fl_descent(),
+                 static_cast<int>(selectionWidth), lineHeight);
     }
 }
 
@@ -211,7 +216,7 @@ void LogDisplay::recalcSize()
     int W = w() - Fl::box_dw(box());
     int H = h() - Fl::box_dh(box());
 
-    const int lineNumbWidth = 0; // TODO: remove when line numbering is introduced
+    constexpr int lineNumbWidth = 0; // TODO: remove when line numbering is introduced
     const int scrollsize = Fl::scrollbar_size();
 
     textArea.x = X + LEFT_MARGIN + lineNumbWidth;
@@ -275,45 +280,39 @@ void LogDisplay::setCursor(const Fl_Cursor cursorType) const
         window()->cursor(cursorType);
     }
 }
-
-int LogDisplay::getRowByCharPos(unsigned long long charPos)
+int LogDisplay::howManyLinesCanFit() const
 {
-    for (int i = 0; i < lines.size(); i++)
-    {
-        if (charPos >= lines[i].first && charPos <= lines[i].second)
-        {
-            return i;
-        }
-    }
-    return -1;
+    return textArea.h / getLineHeight();
 }
-void LogDisplay::setSelectionStart(int event_x, int event_y)
+int LogDisplay::getFirstLineIdx() const
 {
-    int row = getRowByMousePos(event_y);
-    int column = getColumnByMousePos(row, event_x);
-    int selectionStartIndex = column;
-    selection.first = selectionStartIndex;
-    selection.second = selectionStartIndex;
+    return vScrollBar->value() - 1;
 }
 
-void LogDisplay::setSelectionEnd(int mouseX, int mouseY)
+int LogDisplay::getLineHeight() const
 {
-    int row = getRowByMousePos(mouseY);
-    std::cout << "row: " << row << std::endl;
-
-    int column = getColumnByMousePos(row, mouseX);
-    std::cout << "column: " << (column - (int)lines[row].first) << std::endl;
-    int selectionEndIndex = column;
-    std::cout << "selectionEndIndex: " << selectionEndIndex << std::endl;
-    selection.second = selectionEndIndex;
+    return fl_height(textFont, textSize);
 }
-void LogDisplay::selectWord(int mouseX, int mouseY)
-{
-    int row = getRowByMousePos(mouseY);
-    int column = getColumnByMousePos(row, mouseX);
 
-    int selectionBegin = column;
-    int selectionEnd = column;
+void LogDisplay::setSelectionStart(const int mouseX, const int mouseY)
+{
+    const size_t selectionStartIndex = getCharIdxFromMousePos(mouseX, mouseY);
+    selection.begin = selectionStartIndex;
+    selection.end = selectionStartIndex;
+}
+
+void LogDisplay::setSelectionEnd(const int mouseX, const int mouseY)
+{
+    const size_t selectionEndIndex = getCharIdxFromMousePos(mouseX, mouseY);
+    selection.end = selectionEndIndex;
+}
+
+void LogDisplay::selectWord(const int mouseX, const int mouseY)
+{
+    const size_t selectionEndIndex = getCharIdxFromMousePos(mouseX, mouseY);
+
+    size_t selectionBegin = selectionEndIndex;
+    size_t selectionEnd = selectionEndIndex;
     // Find word start
     while (selectionBegin > 0 && data[selectionBegin - 1] != ' ' && data[selectionBegin - 1] != '\n')
     {
@@ -324,43 +323,53 @@ void LogDisplay::selectWord(int mouseX, int mouseY)
     {
         selectionEnd++;
     }
-    selection.first = selectionBegin;
-    selection.second = selectionEnd;
+    selection.begin = selectionBegin;
+    selection.end = selectionEnd;
 }
-int LogDisplay::getRowByMousePos(int mouseY)
-{
-    int mousePos = mouseY - textArea.y; // relative to text area
-    int rowBegin = 0;
-    int rowEnd = 0;
 
-    for (int i = 0; i < 100; i++) // TODO: This "100" should be calculated from LogDisplay height
+size_t LogDisplay::getCharIdxFromMousePos(const int mouseX, const int mouseY) const
+{
+    const int row = getRowByMousePos(mouseY);
+    return getCharIdxFromRowAndMousePos(row, mouseX);
+}
+
+size_t LogDisplay::getRowByMousePos(const int mouseY) const
+{
+    const int mousePos = mouseY - textArea.y; // relative to text area
+    const int howManyLines = howManyLinesCanFit() + 1;
+    const int lineHeight = getLineHeight();
+    int rowBegin = 0;
+    int rowEnd = rowBegin;
+
+    for (int i = 0; i < howManyLines; i++)
     {
         rowBegin = rowEnd;
-        rowEnd += fl_height(textFont, textSize);
+        rowEnd += lineHeight;
         if (mousePos >= rowBegin && mousePos <= rowEnd)
         {
-            return i + vScrollBar->value() - 1;
+            return i + getFirstLineIdx();
         }
     }
-    return -1;
+    return 0;
 }
-int LogDisplay::getColumnByMousePos(int row, int mouseX)
+size_t LogDisplay::getCharIdxFromRowAndMousePos(const int row, const int mouseX) const
 {
-    assert(row >= 0 && row < lines.size());
+    if (row < 0 || row >= lines.size())
+    {
+        return 0;
+    }
 
-    int mousePos = mouseX - textArea.x; // relative to text area
-    auto line = lines[row];
-    int lineBegin = line.first;
-    int lineEnd = line.second;
+    const int mousePos = mouseX - textArea.x; // relative to text area
+    const auto [lineBegin, lineEnd] = lines[row];
 
-    int columnBegin = lineBegin;
-    int columnEnd = lineBegin;
+    const size_t columnBegin = lineBegin;
+    size_t columnEnd = lineBegin;
     while (columnEnd <= lineEnd)
     {
-        double textWidth = fl_width(data + columnBegin, columnEnd - columnBegin);
+        const int textSize = static_cast<int>(columnEnd - columnBegin);
+        const double textWidth = fl_width(data + columnBegin, textSize);
         if (mousePos >= textWidth)
         {
-            // columnBegin = columnEnd;
             columnEnd++;
         }
         else
@@ -374,9 +383,5 @@ int LogDisplay::getColumnByMousePos(int row, int mouseX)
 
 void LogDisplay::vScrollCallback(Fl_Scrollbar* w, LogDisplay* pThis)
 {
-    std::cout << "vScrollCallback: " << w->value() << std::endl;
-    pThis->firstLine = w->value() - 1;
-    // w->redraw();
-    // pThis->redraw();
     pThis->damage(FL_DAMAGE_SCROLL);
 }
