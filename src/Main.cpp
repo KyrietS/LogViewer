@@ -31,7 +31,8 @@ int main()
     std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
     fileContent = std::move(content);
 
-    // const char* data = "yyyyyyyyyy\niiTTiiiiiiiii\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n13\n14\n";
+    // const char* data =
+    // "yyyyyyyyyy\niiTTiiiiiiiii\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n13\n14\n15\n16\n17\n18\n19\n20\n21\n22\n23\n24\n25";
     // logDisplay->setData(data, strlen(data));
     const char* data = fileContent.c_str();
     logDisplay->setData(data, fileContent.size());
@@ -41,11 +42,6 @@ int main()
     // textDisplay->buffer()->text("Hello, World!\nHello, World!\nHello, World!\nHello, World!\nHello, "
     //                             "World!\nx\nx\nx\nx\nx\nx\nx\nx\nx\nx\nx\nx\nx\nx\nx\nx\nx\nx\nx\nx\nx\n");
     textDisplay->buffer()->text(fileContent.c_str());
-
-    const auto button = new Fl_Button(120, 120, 100, 30, "Close");
-    button->callback([](Fl_Widget* w, void*) { w->window()->hide(); });
-    button->clear_visible_focus();
-    button->tooltip("Click to close the window.");
 
     // Center the window on the screen.
     window->position((Fl::w() - window->w()) / 2, (Fl::h() - window->h()) / 2);
