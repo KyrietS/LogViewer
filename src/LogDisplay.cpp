@@ -369,10 +369,14 @@ size_t LogDisplay::getRowByMousePos(const int mouseY) const
 }
 size_t LogDisplay::getCharIdxFromRowAndMousePos(const int row, const int mouseX) const
 {
-    if (row < 0 || row >= lines.size())
+    if (row < 0)
     {
         return 0;
     }
+    if( row >= lines.size() )
+    {
+		return dataSize - 1;
+	}
 
     const int mousePos = mouseX - textArea.x; // relative to text area
     const auto [lineBegin, lineEnd] = lines[row];
