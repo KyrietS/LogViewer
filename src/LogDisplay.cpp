@@ -64,6 +64,12 @@ void LogDisplay::setData(const char* data, size_t size)
         lineStart = lineEnd;
     }
 
+    // Add an empty line if the last character is a newline
+    if( data[ dataSize - 1 ] == '\n' )
+    {
+		lines.emplace_back(dataSize, dataSize);
+	}
+
     const int numberOfLines = static_cast<int>(lines.size());
     vScrollBar->value(1, howManyLinesCanFit(), 1, numberOfLines);
 }
@@ -166,7 +172,7 @@ void LogDisplay::drawText()
     const int lineHeight = getLineHeight();
     int baseline = textArea.y + lineHeight - fl_descent();
 
-    const auto howManyLinesToBeDrawn = std::min(static_cast<size_t>(howManyLinesCanFit()), lines.size() - firstLine);
+    const auto howManyLinesToBeDrawn = std::min(static_cast<size_t>(howManyLinesCanFit() + 1), lines.size() - firstLine);
 
     using IterDiff = decltype(lines)::difference_type;
     const auto firstLineIter = lines.begin() + static_cast<IterDiff>(firstLine);
@@ -240,7 +246,9 @@ void LogDisplay::recalcSize()
 
     vScrollBar->resize(X + W - scrollsize, textArea.y - TOP_MARGIN, scrollsize,
                        textArea.h + TOP_MARGIN + BOTTOM_MARGIN);
+    vScrollBar->value(vScrollBar->value(), howManyLinesCanFit(), 1, static_cast<int>(lines.size()));
 }
+
 LogDisplay::EventStatus LogDisplay::handleMousePressed()
 {
     if (Fl::event_inside(textArea.x, textArea.y, textArea.w, textArea.h)) // TODO: Move to separate function
@@ -375,7 +383,7 @@ size_t LogDisplay::getCharIdxFromRowAndMousePos(const int row, const int mouseX)
     }
     if( row >= lines.size() )
     {
-		return dataSize - 1;
+        return dataSize;
 	}
 
     const int mousePos = mouseX - textArea.x; // relative to text area
