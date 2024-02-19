@@ -65,10 +65,10 @@ void LogDisplay::setData(const char* data, size_t size)
     }
 
     // Add an empty line if the last character is a newline
-    if( data[ dataSize - 1 ] == '\n' )
+    if (data[dataSize - 1] == '\n')
     {
-		lines.emplace_back(dataSize, dataSize);
-	}
+        lines.emplace_back(dataSize, dataSize);
+    }
 
     const int numberOfLines = static_cast<int>(lines.size());
     vScrollBar->value(1, howManyLinesCanFit(), 1, numberOfLines);
@@ -155,7 +155,7 @@ LogDisplay::EventStatus LogDisplay::handleEvent(const int event)
         setCursor(FL_CURSOR_DEFAULT);
         return EventStatus::Handled;
     case FL_FOCUS:
-		return EventStatus::Handled;
+        return EventStatus::Handled;
 
     case FL_KEYBOARD:
         return handleKeyboard();
@@ -181,7 +181,8 @@ void LogDisplay::drawText()
     const int lineHeight = getLineHeight();
     int baseline = textArea.y + lineHeight - fl_descent();
 
-    const auto howManyLinesToBeDrawn = std::min(static_cast<size_t>(howManyLinesCanFit() + 1), lines.size() - firstLine);
+    const auto howManyLinesToBeDrawn =
+        std::min(static_cast<size_t>(howManyLinesCanFit() + 1), lines.size() - firstLine);
 
     using IterDiff = decltype(lines)::difference_type;
     const auto firstLineIter = lines.begin() + static_cast<IterDiff>(firstLine);
@@ -308,13 +309,13 @@ LogDisplay::EventStatus LogDisplay::handleMouseMoved() const
 LogDisplay::EventStatus LogDisplay::handleKeyboard()
 {
     // Ctrl + C
-    if( Fl::event_ctrl() && Fl::event_key() == 'c' )
+    if (Fl::event_ctrl() && Fl::event_key() == 'c')
     {
-		copySelectionToClipboard();
-		return EventStatus::Handled;
-	}
+        copySelectionToClipboard();
+        return EventStatus::Handled;
+    }
     // Ctrl + A
-    if( Fl::event_ctrl() && Fl::event_key() == 'a' )
+    if (Fl::event_ctrl() && Fl::event_key() == 'a')
     {
         selection.begin = 0;
         selection.end = dataSize;
@@ -327,8 +328,9 @@ LogDisplay::EventStatus LogDisplay::handleKeyboard()
 
 void LogDisplay::copySelectionToClipboard() const
 {
-    int clipboardDestination = 1; // 0 = selection buffer, 1 = clipboard, 2 = both
-    Fl::copy(data + selection.begin, selection.end - selection.begin, clipboardDestination);
+    constexpr int clipboardDestination = 1; // 0 = selection buffer, 1 = clipboard, 2 = both
+    const int selectionLength = static_cast<int>(selection.end - selection.begin);
+    Fl::copy(data + selection.begin, selectionLength, clipboardDestination);
 }
 
 void LogDisplay::setCursor(const Fl_Cursor cursorType) const
@@ -388,7 +390,7 @@ void LogDisplay::selectWord(const int mouseX, const int mouseY)
 
 size_t LogDisplay::getCharIdxFromMousePos(const int mouseX, const int mouseY) const
 {
-    const int row = getRowByMousePos(mouseY);
+    const size_t row = getRowByMousePos(mouseY);
     return getCharIdxFromRowAndMousePos(row, mouseX);
 }
 
@@ -411,16 +413,12 @@ size_t LogDisplay::getRowByMousePos(const int mouseY) const
     }
     return 0;
 }
-size_t LogDisplay::getCharIdxFromRowAndMousePos(const int row, const int mouseX) const
+size_t LogDisplay::getCharIdxFromRowAndMousePos(const size_t row, const int mouseX) const
 {
-    if (row < 0)
-    {
-        return 0;
-    }
-    if( row >= lines.size() )
+    if (row >= lines.size())
     {
         return dataSize;
-	}
+    }
 
     const int mousePos = mouseX - textArea.x; // relative to text area
     const auto [lineBegin, lineEnd] = lines[row];

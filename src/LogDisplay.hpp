@@ -46,7 +46,7 @@ class LogDisplay : public Fl_Group
     size_t getCharIdxFromMousePos(int mouseX, int mouseY) const;
     size_t getRowByMousePos(int mouseY) const;
     // Note: can return dataSize if the mouse is outside the text area.
-    size_t getCharIdxFromRowAndMousePos(int row, int mouseX) const;
+    size_t getCharIdxFromRowAndMousePos(size_t row, int mouseX) const;
 
     void copySelectionToClipboard() const;
 
