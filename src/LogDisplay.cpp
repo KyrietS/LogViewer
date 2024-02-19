@@ -121,7 +121,7 @@ int LogDisplay::handle(const int event)
     }
 
     // The widget is not active
-    if (!active_r())
+    if (!active_r() || !window())
     {
         return 0;
     }
@@ -150,6 +150,15 @@ LogDisplay::EventStatus LogDisplay::handleEvent(const int event)
     case FL_HIDE:
         setCursor(FL_CURSOR_DEFAULT);
         return EventStatus::Handled;
+
+    case FL_UNFOCUS:
+        setCursor(FL_CURSOR_DEFAULT);
+        return EventStatus::Handled;
+    case FL_FOCUS:
+		return EventStatus::Handled;
+
+    case FL_KEYBOARD:
+        return handleKeyboard();
 
     default:
         return EventStatus::NotHandled;
@@ -295,6 +304,33 @@ LogDisplay::EventStatus LogDisplay::handleMouseMoved() const
     setCursor(FL_CURSOR_DEFAULT);
     return EventStatus::NotHandled;
 }
+
+LogDisplay::EventStatus LogDisplay::handleKeyboard()
+{
+    // Ctrl + C
+    if( Fl::event_ctrl() && Fl::event_key() == 'c' )
+    {
+		copySelectionToClipboard();
+		return EventStatus::Handled;
+	}
+    // Ctrl + A
+    if( Fl::event_ctrl() && Fl::event_key() == 'a' )
+    {
+        selection.begin = 0;
+        selection.end = dataSize;
+        damage(FL_DAMAGE_SCROLL);
+        return EventStatus::Handled;
+    }
+
+    return EventStatus::NotHandled;
+}
+
+void LogDisplay::copySelectionToClipboard() const
+{
+    int clipboardDestination = 1; // 0 = selection buffer, 1 = clipboard, 2 = both
+    Fl::copy(data + selection.begin, selection.end - selection.begin, clipboardDestination);
+}
+
 void LogDisplay::setCursor(const Fl_Cursor cursorType) const
 {
     if (window())

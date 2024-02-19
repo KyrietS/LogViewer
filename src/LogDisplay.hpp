@@ -33,6 +33,7 @@ class LogDisplay : public Fl_Group
     EventStatus handleMouseDragged();
     EventStatus handleMouseScroll(int event) const;
     EventStatus handleMouseMoved() const;
+    EventStatus handleKeyboard();
 
     void setCursor(Fl_Cursor cursorType) const;
     int howManyLinesCanFit() const;
@@ -44,9 +45,10 @@ class LogDisplay : public Fl_Group
     void selectWord(int mouseX, int mouseY);
     size_t getCharIdxFromMousePos(int mouseX, int mouseY) const;
     size_t getRowByMousePos(int mouseY) const;
-
     // Note: can return dataSize if the mouse is outside the text area.
     size_t getCharIdxFromRowAndMousePos(int row, int mouseX) const;
+
+    void copySelectionToClipboard() const;
 
     static void vScrollCallback(Fl_Scrollbar* w, LogDisplay* pThis);
 
