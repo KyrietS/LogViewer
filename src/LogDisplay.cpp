@@ -263,9 +263,24 @@ LogDisplay::EventStatus LogDisplay::handleMousePressed()
 {
     if (Fl::event_inside(textArea.x, textArea.y, textArea.w, textArea.h)) // TODO: Move to separate function
     {
-        const bool doubleClick = Fl::event_clicks() != 0;
-        if (doubleClick)
+        // Windows recognizes the third click as a normal click, so I need to hand-craft the triple click with a timer
+        const bool windowsCompatTripleClick = Fl::seconds_since(lastDoubleClick) <= 0.5 &&
+                                              Fl::event_x() == doubleClickPos.x && Fl::event_y() == doubleClickPos.y;
+
+        const bool doubleClick = Fl::event_clicks() == 1;
+        const bool tripleClick = Fl::event_clicks() == 2 || windowsCompatTripleClick;
+
+        if (tripleClick)
+        {
+            selectLine(Fl::event_x(), Fl::event_y());
+        }
+        else if (doubleClick)
+        {
             selectWord(Fl::event_x(), Fl::event_y());
+            lastDoubleClick = Fl::now();
+            doubleClickPos.x = Fl::event_x();
+            doubleClickPos.y = Fl::event_y();
+        }
         else
             setSelectionStart(Fl::event_x(), Fl::event_y());
         damage(FL_DAMAGE_SCROLL);
@@ -386,6 +401,14 @@ void LogDisplay::selectWord(const int mouseX, const int mouseY)
     }
     selection.begin = selectionBegin;
     selection.end = selectionEnd;
+}
+void LogDisplay::selectLine(int mouseX, int mouseY)
+{
+    const size_t row = getRowByMousePos(mouseY);
+    const size_t lineBegin = lines[row].first;
+    const size_t lineEnd = lines[row].second;
+    selection.begin = lineBegin;
+    selection.end = lineEnd;
 }
 
 size_t LogDisplay::getCharIdxFromMousePos(const int mouseX, const int mouseY) const

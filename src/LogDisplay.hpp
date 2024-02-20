@@ -43,6 +43,7 @@ class LogDisplay : public Fl_Group
     void setSelectionStart(int mouseX, int mouseY);
     void setSelectionEnd(int mouseX, int mouseY);
     void selectWord(int mouseX, int mouseY);
+    void selectLine(int mouseX, int mouseY);
     size_t getCharIdxFromMousePos(int mouseX, int mouseY) const;
     size_t getRowByMousePos(int mouseY) const;
     // Note: can return dataSize if the mouse is outside the text area.
@@ -67,6 +68,11 @@ class LogDisplay : public Fl_Group
     {
         size_t begin, end;
     } selection{0, 0};
+    Fl_Timestamp lastDoubleClick = {};
+    struct
+    {
+        int x, y;
+    } doubleClickPos{};
 
     // An array of pairs of line start and end positions.
     // This helper array is created when the data is set.
