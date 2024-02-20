@@ -262,6 +262,7 @@ LogDisplay::EventStatus LogDisplay::handleMousePressed()
 {
     if (Fl::event_inside(textArea.x, textArea.y, textArea.w, textArea.h)) // TODO: Move to separate function
     {
+        take_focus();
         cursorPos = getCharIdxFromMousePos(Fl::event_x(), Fl::event_y());
 
         // TODO: Move to separate function
