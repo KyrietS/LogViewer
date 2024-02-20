@@ -26,6 +26,7 @@ class LogDisplay : public Fl_Group
     void drawBackground() const;
     void drawText();
     void drawSelection(size_t startPos, size_t endPos, int baseline) const;
+    void drawTextLine(size_t lineBegin, size_t lineEnd, int baseline) const;
     void recalcSize();
 
     EventStatus handleEvent(int event);

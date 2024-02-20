@@ -191,8 +191,6 @@ void LogDisplay::drawText()
 
     for (const auto& [startPos, endPos] : linesSpan)
     {
-        const auto& lineLength = static_cast<int>(endPos - startPos);
-
         // Clear line
         const bool isCursorInThisLine = startPos <= cursorPos && cursorPos <= endPos;
         const Fl_Color bgcolor = isCursorInThisLine ? FL_DARK1 : color();
@@ -203,8 +201,8 @@ void LogDisplay::drawText()
         drawSelection(startPos, endPos, baseline);
 
         // Draw text
-        fl_color(textColor);
-        fl_draw(data + startPos, lineLength, textArea.x, baseline);
+        drawTextLine(startPos, endPos, baseline);
+
         baseline += lineHeight;
     }
 
@@ -236,6 +234,50 @@ void LogDisplay::drawSelection(const size_t startPos, const size_t endPos, int b
         fl_rectf(static_cast<int>(selectionOffset), baseline - lineHeight + fl_descent(),
                  static_cast<int>(selectionWidth), lineHeight);
     }
+}
+void LogDisplay::drawTextLine(const size_t lineBegin, const size_t lineEnd, const int baseline) const
+{
+    const auto& lineLength = static_cast<int>(lineEnd - lineBegin);
+
+    const size_t selectionBegin = std::min(selection.begin, selection.end);
+    const size_t selectionEnd = std::max(selection.begin, selection.end);
+
+    // Selection is in a line above the current one
+    if (selectionEnd < lineBegin)
+    {
+        fl_color(textColor);
+        fl_draw(data + lineBegin, lineLength, textArea.x, baseline);
+        return;
+    }
+
+    // Selection is in a line below the current one
+    if (selectionBegin > lineEnd)
+    {
+        fl_color(textColor);
+        fl_draw(data + lineBegin, lineLength, textArea.x, baseline);
+        return;
+    }
+
+    // Selection overlaps the line
+    const size_t selectedLineBegin = std::max(selectionBegin, lineBegin);
+    const size_t selectedLineEnd = std::min(selectionEnd, lineEnd);
+
+    const int beforeSelectionLength = static_cast<int>(selectedLineBegin - lineBegin);
+    const int selectionLength = static_cast<int>(selectedLineEnd - selectedLineBegin);
+    const int afterSelectionLength = static_cast<int>(lineEnd - selectedLineEnd);
+
+    fl_color(textColor);
+    fl_draw(data + lineBegin, beforeSelectionLength, textArea.x, baseline);
+
+    // Selected text will have white font color
+    fl_color(FL_WHITE);
+    const int selectionOffset = static_cast<int>(fl_width(data + lineBegin, beforeSelectionLength));
+    fl_draw(data + selectedLineBegin, selectionLength, textArea.x + selectionOffset, baseline);
+
+    fl_color(textColor);
+    const int afterSelectionOffset =
+        static_cast<int>(fl_width(data + lineBegin, beforeSelectionLength + selectionLength));
+    fl_draw(data + selectedLineEnd, afterSelectionLength, textArea.x + afterSelectionOffset, baseline);
 }
 
 void LogDisplay::recalcSize()
