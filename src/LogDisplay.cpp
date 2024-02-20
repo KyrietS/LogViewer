@@ -114,11 +114,9 @@ void LogDisplay::drawBackground() const
 
 int LogDisplay::handle(const int event)
 {
-    if (!Fl::event_inside(textArea.x, textArea.y, textArea.w, textArea.h) && event != FL_LEAVE && event != FL_ENTER &&
-        event != FL_MOVE && event != FL_FOCUS && event != FL_UNFOCUS && event != FL_KEYBOARD && event != FL_KEYUP)
-    {
-        return Fl_Group::handle(event);
-    }
+    // I will pass the event to child widgets but I will not check if they handled it.
+    // No matter the result I will always continue to handle the event in this parent widget.
+    Fl_Group::handle(event);
 
     // The widget is not active
     if (!active_r() || !window())
@@ -196,7 +194,8 @@ void LogDisplay::drawText()
         const auto& lineLength = static_cast<int>(endPos - startPos);
 
         // Clear line
-        const Fl_Color bgcolor = color();
+        const bool isCursorInThisLine = startPos <= cursorPos && cursorPos <= endPos;
+        const Fl_Color bgcolor = isCursorInThisLine ? FL_DARK1 : color();
         fl_color(bgcolor);
         fl_rectf(textArea.x, baseline - lineHeight + fl_descent(), textArea.w, lineHeight);
 
@@ -233,7 +232,7 @@ void LogDisplay::drawSelection(const size_t startPos, const size_t endPos, int b
             textArea.x + fl_width(data + startPos, static_cast<int>(selectionStart - startPos));
         const double selectionWidth =
             selectionEnd > endPos ? textArea.w : fl_width(data + selectionStart, selectionLength);
-        fl_color(FL_SELECTION_COLOR);
+        fl_color(selection_color());
         fl_rectf(static_cast<int>(selectionOffset), baseline - lineHeight + fl_descent(),
                  static_cast<int>(selectionWidth), lineHeight);
     }
@@ -293,15 +292,10 @@ LogDisplay::EventStatus LogDisplay::handleMousePressed()
 }
 LogDisplay::EventStatus LogDisplay::handleMouseDragged()
 {
-    if (Fl::event_inside(textArea.x, textArea.y, textArea.w, textArea.h))
-    {
-        cursorPos = getCharIdxFromMousePos(Fl::event_x(), Fl::event_y());
-        setSelectionEnd(Fl::event_x(), Fl::event_y());
-        damage(FL_DAMAGE_SCROLL);
-        return EventStatus::Handled;
-    }
-
-    return EventStatus::NotHandled;
+    cursorPos = getCharIdxFromMousePos(Fl::event_x(), Fl::event_y());
+    setSelectionEnd(Fl::event_x(), Fl::event_y());
+    damage(FL_DAMAGE_SCROLL);
+    return EventStatus::Handled;
 }
 LogDisplay::EventStatus LogDisplay::handleMouseScroll(const int event) const
 {
@@ -347,8 +341,11 @@ LogDisplay::EventStatus LogDisplay::handleKeyboard()
 void LogDisplay::copySelectionToClipboard() const
 {
     constexpr int clipboardDestination = 1; // 0 = selection buffer, 1 = clipboard, 2 = both
-    const int selectionLength = static_cast<int>(selection.end - selection.begin);
-    Fl::copy(data + selection.begin, selectionLength, clipboardDestination);
+    // TODO: Move getting selection text to a separate function
+    const size_t selectionStart = std::min(selection.begin, selection.end);
+    const size_t selectionEnd = std::max(selection.begin, selection.end);
+    const int selectionLength = static_cast<int>(selectionEnd - selectionStart);
+    Fl::copy(data + selectionStart, selectionLength, clipboardDestination);
 }
 
 void LogDisplay::setCursor(const Fl_Cursor cursorType) const
@@ -409,7 +406,7 @@ void LogDisplay::selectLine(int mouseX, int mouseY)
 {
     const size_t row = getRowByMousePos(mouseY);
     const size_t lineBegin = lines[row].first;
-    const size_t lineEnd = lines[row].second;
+    const size_t lineEnd = lines[row].second + 1; // including newline character
     selection.begin = lineBegin;
     selection.end = lineEnd;
 }
@@ -422,6 +419,15 @@ size_t LogDisplay::getCharIdxFromMousePos(const int mouseX, const int mouseY) co
 
 size_t LogDisplay::getRowByMousePos(const int mouseY) const
 {
+    if (mouseY < textArea.y)
+    {
+        return 0;
+    }
+    if (mouseY > textArea.y + textArea.h)
+    {
+        return lines.size() - 1;
+    }
+
     const int mousePos = mouseY - textArea.y; // relative to text area
     const int howManyLines = howManyLinesCanFit() + 1;
     const int lineHeight = getLineHeight();
@@ -444,6 +450,10 @@ size_t LogDisplay::getCharIdxFromRowAndMousePos(const size_t row, const int mous
     if (row >= lines.size())
     {
         return dataSize;
+    }
+    if (mouseX < textArea.x)
+    {
+        return lines[row].first;
     }
 
     const int mousePos = mouseX - textArea.x; // relative to text area
