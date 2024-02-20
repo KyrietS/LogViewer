@@ -496,6 +496,7 @@ size_t LogDisplay::getRowByMousePos(const int mouseY) const
     }
     return 0;
 }
+// Return the index of the character pointed by the mouse.
 size_t LogDisplay::getCharIdxFromRowAndMousePos(const size_t row, const int mouseX) const
 {
     if (row >= lines.size())
