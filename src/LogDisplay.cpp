@@ -264,6 +264,14 @@ LogDisplay::EventStatus LogDisplay::handleMousePressed()
     {
         cursorPos = getCharIdxFromMousePos(Fl::event_x(), Fl::event_y());
 
+        // TODO: Move to separate function
+        if (Fl::event_shift())
+        {
+            setSelectionEnd(Fl::event_x(), Fl::event_y());
+            damage(FL_DAMAGE_SCROLL);
+            return EventStatus::Handled;
+        }
+
         // Windows recognizes the third click as a normal click, so I need to hand-craft the triple click with a timer
         const bool windowsCompatTripleClick = Fl::seconds_since(lastDoubleClick) <= 0.5 &&
                                               Fl::event_x() == doubleClickPos.x && Fl::event_y() == doubleClickPos.y;
