@@ -68,6 +68,11 @@ class LogDisplay : public Fl_Group
     {
         size_t begin, end;
     } selection{0, 0};
+
+    // Cursor position
+    // The cursor is not visible, but it is used internally
+    size_t cursorPos = 0;
+
     Fl_Timestamp lastDoubleClick = {};
     struct
     {

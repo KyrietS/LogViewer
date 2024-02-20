@@ -263,6 +263,8 @@ LogDisplay::EventStatus LogDisplay::handleMousePressed()
 {
     if (Fl::event_inside(textArea.x, textArea.y, textArea.w, textArea.h)) // TODO: Move to separate function
     {
+        cursorPos = getCharIdxFromMousePos(Fl::event_x(), Fl::event_y());
+
         // Windows recognizes the third click as a normal click, so I need to hand-craft the triple click with a timer
         const bool windowsCompatTripleClick = Fl::seconds_since(lastDoubleClick) <= 0.5 &&
                                               Fl::event_x() == doubleClickPos.x && Fl::event_y() == doubleClickPos.y;
@@ -293,6 +295,7 @@ LogDisplay::EventStatus LogDisplay::handleMouseDragged()
 {
     if (Fl::event_inside(textArea.x, textArea.y, textArea.w, textArea.h))
     {
+        cursorPos = getCharIdxFromMousePos(Fl::event_x(), Fl::event_y());
         setSelectionEnd(Fl::event_x(), Fl::event_y());
         damage(FL_DAMAGE_SCROLL);
         return EventStatus::Handled;
