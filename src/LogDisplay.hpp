@@ -27,6 +27,7 @@ class LogDisplay : public Fl_Group
     void drawText();
     void drawSelection(size_t startPos, size_t endPos, int baseline) const;
     void drawTextLine(size_t lineBegin, size_t lineEnd, int baseline) const;
+    void drawLineNumber(int lineNumber, int baseline) const;
     void recalcSize();
 
     EventStatus handleEvent(int event);
@@ -58,6 +59,16 @@ class LogDisplay : public Fl_Group
     {
         int x, y, w, h;
     } textArea{};
+
+    // Line numbers displayed on the left size of text area
+    struct
+    {
+        int x, y, w, h;
+    } lineNumbersArea;
+    int lineNumbersWidth = 50;
+    int lineNumbersMargin = 5;
+    Fl_Color lineNumbersColor = fl_rgb_color(150, 150, 150);
+    Fl_Color lineNumbersBgColor = fl_rgb_color(245, 245, 245);
 
     // Text data
     const char* data = nullptr;

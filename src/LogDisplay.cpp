@@ -7,6 +7,7 @@
 #include <cassert>
 #include <iostream>
 #include <span>
+#include <string>
 
 namespace
 {
@@ -187,10 +188,13 @@ void LogDisplay::drawText()
     const auto lastLineIter = firstLineIter + static_cast<IterDiff>(howManyLinesToBeDrawn);
     const std::span linesSpan(firstLineIter, lastLineIter);
 
-    fl_push_clip(textArea.x, textArea.y, textArea.w, textArea.h);
+    fl_rectf(lineNumbersArea.x, lineNumbersArea.y, lineNumbersArea.w, lineNumbersArea.h, lineNumbersBgColor);
 
+    int lineNumber = vScrollBar->value();
     for (const auto& [startPos, endPos] : linesSpan)
     {
+        fl_push_clip(textArea.x, textArea.y, textArea.w, textArea.h);
+
         // Clear line
         const bool isCursorInThisLine = startPos <= cursorPos && cursorPos <= endPos;
         const Fl_Color bgcolor = isCursorInThisLine ? FL_DARK1 : color();
@@ -202,11 +206,14 @@ void LogDisplay::drawText()
 
         // Draw text
         drawTextLine(startPos, endPos, baseline);
+        fl_pop_clip();
 
+        // Draw line number
+        drawLineNumber(lineNumber, baseline);
+
+        lineNumber += 1;
         baseline += lineHeight;
     }
-
-    fl_pop_clip();
 }
 
 void LogDisplay::drawSelection(const size_t startPos, const size_t endPos, int baseline) const
@@ -280,6 +287,17 @@ void LogDisplay::drawTextLine(const size_t lineBegin, const size_t lineEnd, cons
     fl_draw(data + selectedLineEnd, afterSelectionLength, textArea.x + afterSelectionOffset, baseline);
 }
 
+void LogDisplay::drawLineNumber(int lineNumber, int baseline) const
+{
+    int lineHeight = getLineHeight();
+    fl_push_clip(lineNumbersArea.x, lineNumbersArea.y, lineNumbersArea.w, lineNumbersArea.h);
+    std::string lineNumberStr = std::to_string(lineNumber);
+    fl_color(lineNumbersColor);
+    fl_draw(lineNumberStr.c_str(), lineNumbersArea.x + lineNumbersMargin, baseline - lineHeight + fl_descent(),
+            lineNumbersArea.w - 2 * lineNumbersMargin, lineHeight, FL_ALIGN_RIGHT);
+    fl_pop_clip();
+}
+
 void LogDisplay::recalcSize()
 {
     int X = x() + Fl::box_dx(box());
@@ -287,13 +305,17 @@ void LogDisplay::recalcSize()
     int W = w() - Fl::box_dw(box());
     int H = h() - Fl::box_dh(box());
 
-    constexpr int lineNumbWidth = 0; // TODO: remove when line numbering is introduced
     const int scrollsize = Fl::scrollbar_size();
 
-    textArea.x = X + LEFT_MARGIN + lineNumbWidth;
+    textArea.x = X + lineNumbersWidth + LEFT_MARGIN;
     textArea.y = Y + TOP_MARGIN;
-    textArea.w = W - LEFT_MARGIN - RIGHT_MARGIN - lineNumbWidth - scrollsize;
+    textArea.w = W - LEFT_MARGIN - RIGHT_MARGIN - lineNumbersWidth - scrollsize;
     textArea.h = H - TOP_MARGIN - BOTTOM_MARGIN;
+
+    lineNumbersArea.x = X;
+    lineNumbersArea.y = Y;
+    lineNumbersArea.w = lineNumbersWidth;
+    lineNumbersArea.h = H;
 
     vScrollBar->resize(X + W - scrollsize, textArea.y - TOP_MARGIN, scrollsize,
                        textArea.h + TOP_MARGIN + BOTTOM_MARGIN);
