@@ -360,7 +360,7 @@ LogDisplay::EventStatus LogDisplay::handleMousePressed()
 
         if (tripleClick)
         {
-            selectLine(Fl::event_x(), Fl::event_y());
+            selectLine(Fl::event_y());
         }
         else if (doubleClick)
         {
@@ -371,6 +371,13 @@ LogDisplay::EventStatus LogDisplay::handleMousePressed()
         }
         else
             setSelectionStart(Fl::event_x(), Fl::event_y());
+        damage(FL_DAMAGE_SCROLL);
+        return EventStatus::Handled;
+    }
+
+    if (Fl::event_inside(lineNumbersArea.x, lineNumbersArea.y, lineNumbersArea.w, lineNumbersArea.h))
+    {
+        selectLine(Fl::event_y());
         damage(FL_DAMAGE_SCROLL);
         return EventStatus::Handled;
     }
@@ -487,14 +494,16 @@ void LogDisplay::selectWord(const int mouseX, const int mouseY)
     }
     selection.begin = selectionBegin;
     selection.end = selectionEnd;
+    cursorPos = selection.end;
 }
-void LogDisplay::selectLine(int mouseX, int mouseY)
+void LogDisplay::selectLine(int mouseY)
 {
     const size_t row = getRowByMousePos(mouseY);
     const size_t lineBegin = lines[row].first;
     const size_t lineEnd = lines[row].second + 1; // including newline character
     selection.begin = lineBegin;
     selection.end = lineEnd;
+    cursorPos = selection.end;
 }
 
 size_t LogDisplay::getCharIdxFromMousePos(const int mouseX, const int mouseY) const
