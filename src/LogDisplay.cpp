@@ -209,7 +209,7 @@ void LogDisplay::drawText()
         fl_pop_clip();
 
         // Draw line number
-        drawLineNumber(lineNumber, baseline);
+        drawLineNumber(lineNumber, baseline, isCursorInThisLine ? bgcolor : lineNumbersBgColor);
 
         lineNumber += 1;
         baseline += lineHeight;
@@ -287,10 +287,13 @@ void LogDisplay::drawTextLine(const size_t lineBegin, const size_t lineEnd, cons
     fl_draw(data + selectedLineEnd, afterSelectionLength, textArea.x + afterSelectionOffset, baseline);
 }
 
-void LogDisplay::drawLineNumber(int lineNumber, int baseline) const
+void LogDisplay::drawLineNumber(int lineNumber, int baseline, Fl_Color bgcolor) const
 {
     int lineHeight = getLineHeight();
     fl_push_clip(lineNumbersArea.x, lineNumbersArea.y, lineNumbersArea.w, lineNumbersArea.h);
+
+    fl_rectf(lineNumbersArea.x, baseline - lineHeight + fl_descent(), lineNumbersArea.w, lineHeight, bgcolor);
+
     std::string lineNumberStr = std::to_string(lineNumber);
     fl_color(lineNumbersColor);
     fl_draw(lineNumberStr.c_str(), lineNumbersArea.x, baseline - lineHeight + fl_descent(),
@@ -395,7 +398,6 @@ LogDisplay::EventStatus LogDisplay::handleMouseDragged()
     }
     else
     {
-        cursorPos = getCharIdxFromMousePos(Fl::event_x(), Fl::event_y());
         setSelectionEnd(Fl::event_x(), Fl::event_y());
     }
     cursorPos = selection.end;

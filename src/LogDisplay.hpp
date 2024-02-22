@@ -27,7 +27,7 @@ class LogDisplay : public Fl_Group
     void drawText();
     void drawSelection(size_t startPos, size_t endPos, int baseline) const;
     void drawTextLine(size_t lineBegin, size_t lineEnd, int baseline) const;
-    void drawLineNumber(int lineNumber, int baseline) const;
+    void drawLineNumber(int lineNumber, int baseline, Fl_Color bgcolor) const;
     void recalcSize();
     int calcLineNumberWidth() const;
 
