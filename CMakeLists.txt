@@ -4,7 +4,7 @@ include(FetchContent)
 FetchContent_Declare(
         fltk
         GIT_REPOSITORY https://github.com/fltk/fltk.git
-        GIT_TAG 094ee9e953a7361093a2fa0cff90ee8ce6de8051
+        GIT_TAG 957becbe2836d1bc4a8be76b7ca4abb445a181f3
 )
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)

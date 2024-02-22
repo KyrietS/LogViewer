@@ -439,8 +439,7 @@ int LogDisplay::getFirstLineIdx() const
 
 int LogDisplay::getLineHeight() const
 {
-    fl_font(textFont, textSize);
-    return fl_height();
+    return fl_height(textFont, textSize);
 }
 
 void LogDisplay::setSelectionStart(const int mouseX, const int mouseY)
