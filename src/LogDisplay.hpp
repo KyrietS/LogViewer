@@ -34,14 +34,16 @@ class LogDisplay : public Fl_Group
     EventStatus handleEvent(int event);
     EventStatus handleMousePressed();
     EventStatus handleMouseDragged();
-    EventStatus handleMouseScroll(int event) const;
+    EventStatus handleMouseScrolled(int event) const;
     EventStatus handleMouseMoved() const;
     EventStatus handleKeyboard();
 
     void setCursor(Fl_Cursor cursorType) const;
     int howManyLinesCanFit() const;
     int getFirstLineIdx() const;
+    int getHorizontalOffset() const;
     int getLineHeight() const;
+    int getMaxLineWidth() const;
 
     void setSelectionStart(int mouseX, int mouseY);
     void setSelectionEnd(int mouseX, int mouseY);
@@ -54,6 +56,7 @@ class LogDisplay : public Fl_Group
     void copySelectionToClipboard() const;
 
     static void vScrollCallback(Fl_Scrollbar* w, LogDisplay* pThis);
+    static void hScrollCallback(Fl_Scrollbar* w, LogDisplay* pThis);
 
     // Text area within the widget
     struct
@@ -83,6 +86,11 @@ class LogDisplay : public Fl_Group
     // The cursor is not visible, but it is used internally
     size_t cursorPos = 0;
 
+    // This needs to be cached because to get this value
+    // we need to measure the width of each line of text.
+    // TODO: CHANGE IT
+    int maxLineWidth = 0;
+
     Fl_Timestamp lastDoubleClick = {};
     struct
     {
@@ -100,4 +108,5 @@ class LogDisplay : public Fl_Group
 
     // Child widgets
     Fl_Scrollbar* vScrollBar;
+    Fl_Scrollbar* hScrollBar;
 };

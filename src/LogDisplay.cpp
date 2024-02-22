@@ -26,6 +26,7 @@ bool isWordSeparator(const char c)
 
 LogDisplay::LogDisplay(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l)
 {
+    // TODO: Memory leak
     vScrollBar = new Fl_Scrollbar(0, 0, 1, 1);
     vScrollBar->callback(reinterpret_cast<Fl_Callback*>(vScrollCallback), this);
 
@@ -33,6 +34,13 @@ LogDisplay::LogDisplay(int X, int Y, int W, int H, const char* l) : Fl_Group(X, 
     vScrollBar->value(1, 1, 1, 1);
     vScrollBar->linesize(3);
     vScrollBar->set_visible();
+
+    hScrollBar = new Fl_Scrollbar(0, 0, 1, 1);
+    hScrollBar->type(FL_HORIZONTAL);
+    hScrollBar->callback(reinterpret_cast<Fl_Callback*>(hScrollCallback), this);
+    hScrollBar->value(1, 1, 1, 1);
+    hScrollBar->linesize(50);
+    hScrollBar->set_visible();
 
     textFont = FL_HELVETICA;
     textSize = FL_NORMAL_SIZE;
@@ -73,6 +81,9 @@ void LogDisplay::setData(const char* data, size_t size)
 
     const int numberOfLines = static_cast<int>(lines.size());
     vScrollBar->value(1, howManyLinesCanFit(), 1, numberOfLines);
+
+    maxLineWidth = getMaxLineWidth(); // This is time consuming operation!
+    hScrollBar->value(1, textArea.w, 1, maxLineWidth);
 }
 
 const char* LogDisplay::getData() const
@@ -92,7 +103,9 @@ void LogDisplay::draw()
             drawBackground();
 
             vScrollBar->damage(FL_DAMAGE_ALL);
+            hScrollBar->damage(FL_DAMAGE_ALL);
             update_child(*vScrollBar);
+            update_child(*hScrollBar);
 
             drawText();
         }
@@ -115,9 +128,9 @@ void LogDisplay::drawBackground() const
 
 int LogDisplay::handle(const int event)
 {
-    // I will pass the event to child widgets but I will not check if they handled it.
+    // I will pass the event to child widgets but I will not return early if they handled it.
     // No matter the result I will always continue to handle the event in this parent widget.
-    Fl_Group::handle(event);
+    int childHandled = Fl_Group::handle(event);
 
     // The widget is not active
     if (!active_r() || !window())
@@ -125,7 +138,7 @@ int LogDisplay::handle(const int event)
         return 0;
     }
 
-    return static_cast<int>(handleEvent(event));
+    return static_cast<int>(handleEvent(event)) | childHandled;
 }
 
 LogDisplay::EventStatus LogDisplay::handleEvent(const int event)
@@ -139,7 +152,7 @@ LogDisplay::EventStatus LogDisplay::handleEvent(const int event)
         return handleMouseDragged();
 
     case FL_MOUSEWHEEL:
-        return handleMouseScroll(event);
+        return handleMouseScrolled(event);
 
     case FL_ENTER:
     case FL_MOVE:
@@ -188,7 +201,11 @@ void LogDisplay::drawText()
     const auto lastLineIter = firstLineIter + static_cast<IterDiff>(howManyLinesToBeDrawn);
     const std::span linesSpan(firstLineIter, lastLineIter);
 
+    // draw the background for line numbers on the left
     fl_rectf(lineNumbersArea.x, lineNumbersArea.y, lineNumbersArea.w, lineNumbersArea.h, lineNumbersBgColor);
+
+    // draw that little box in the corner of the scrollbars
+    fl_rectf(hScrollBar->x() + hScrollBar->w(), hScrollBar->y(), vScrollBar->w(), hScrollBar->h(), FL_BACKGROUND_COLOR);
 
     int lineNumber = vScrollBar->value();
     for (const auto& [startPos, endPos] : linesSpan)
@@ -232,11 +249,13 @@ void LogDisplay::drawSelection(const size_t startPos, const size_t endPos, int b
 
     if (selectionStart >= startPos && selectionStart <= endPos)
     {
+        // TODO: Create TextArea class and add this logic to a method.
+        int textAreaWithOffset = textArea.x - getHorizontalOffset();
         const int lineHeight = getLineHeight();
         const double selectionOffset =
-            textArea.x + fl_width(data + startPos, static_cast<int>(selectionStart - startPos));
-        const double selectionWidth =
-            selectionEnd > endPos ? textArea.w : fl_width(data + selectionStart, selectionLength);
+            textAreaWithOffset + fl_width(data + startPos, static_cast<int>(selectionStart - startPos));
+        const double selectionWidth = selectionEnd > endPos ? std::max(textArea.w, maxLineWidth)
+                                                            : fl_width(data + selectionStart, selectionLength);
         fl_color(selection_color());
         fl_rectf(static_cast<int>(selectionOffset), baseline - lineHeight + fl_descent(),
                  static_cast<int>(selectionWidth), lineHeight);
@@ -248,12 +267,13 @@ void LogDisplay::drawTextLine(const size_t lineBegin, const size_t lineEnd, cons
 
     const size_t selectionBegin = std::min(selection.begin, selection.end);
     const size_t selectionEnd = std::max(selection.begin, selection.end);
+    const int textPosition = textArea.x - getHorizontalOffset();
 
     // Selection is in a line above the current one
     if (selectionEnd < lineBegin)
     {
         fl_color(textColor);
-        fl_draw(data + lineBegin, lineLength, textArea.x, baseline);
+        fl_draw(data + lineBegin, lineLength, textPosition, baseline);
         return;
     }
 
@@ -261,7 +281,7 @@ void LogDisplay::drawTextLine(const size_t lineBegin, const size_t lineEnd, cons
     if (selectionBegin > lineEnd)
     {
         fl_color(textColor);
-        fl_draw(data + lineBegin, lineLength, textArea.x, baseline);
+        fl_draw(data + lineBegin, lineLength, textPosition, baseline);
         return;
     }
 
@@ -274,17 +294,17 @@ void LogDisplay::drawTextLine(const size_t lineBegin, const size_t lineEnd, cons
     const int afterSelectionLength = static_cast<int>(lineEnd - selectedLineEnd);
 
     fl_color(textColor);
-    fl_draw(data + lineBegin, beforeSelectionLength, textArea.x, baseline);
+    fl_draw(data + lineBegin, beforeSelectionLength, textPosition, baseline);
 
     // Selected text will have white font color
     fl_color(FL_WHITE);
     const int selectionOffset = static_cast<int>(fl_width(data + lineBegin, beforeSelectionLength));
-    fl_draw(data + selectedLineBegin, selectionLength, textArea.x + selectionOffset, baseline);
+    fl_draw(data + selectedLineBegin, selectionLength, textPosition + selectionOffset, baseline);
 
     fl_color(textColor);
     const int afterSelectionOffset =
         static_cast<int>(fl_width(data + lineBegin, beforeSelectionLength + selectionLength));
-    fl_draw(data + selectedLineEnd, afterSelectionLength, textArea.x + afterSelectionOffset, baseline);
+    fl_draw(data + selectedLineEnd, afterSelectionLength, textPosition + afterSelectionOffset, baseline);
 }
 
 void LogDisplay::drawLineNumber(int lineNumber, int baseline, Fl_Color bgcolor) const
@@ -314,16 +334,18 @@ void LogDisplay::recalcSize()
     lineNumbersArea.x = X;
     lineNumbersArea.y = Y;
     lineNumbersArea.w = lineNumbersWidth + LEFT_MARGIN + RIGHT_MARGIN;
-    lineNumbersArea.h = H;
+    lineNumbersArea.h = H - scrollsize;
 
     textArea.x = X + lineNumbersArea.w + LEFT_MARGIN;
     textArea.y = Y + TOP_MARGIN;
     textArea.w = W - LEFT_MARGIN - RIGHT_MARGIN - lineNumbersArea.w - scrollsize;
-    textArea.h = H - TOP_MARGIN - BOTTOM_MARGIN;
+    textArea.h = H - TOP_MARGIN - BOTTOM_MARGIN - scrollsize;
 
     vScrollBar->resize(X + W - scrollsize, textArea.y - TOP_MARGIN, scrollsize,
                        textArea.h + TOP_MARGIN + BOTTOM_MARGIN);
+    hScrollBar->resize(X, Y + H - scrollsize, W - scrollsize, scrollsize);
     vScrollBar->value(vScrollBar->value(), howManyLinesCanFit(), 1, static_cast<int>(lines.size()));
+    hScrollBar->value(hScrollBar->value(), textArea.w, 1, maxLineWidth);
 }
 
 int LogDisplay::calcLineNumberWidth() const
@@ -404,9 +426,10 @@ LogDisplay::EventStatus LogDisplay::handleMouseDragged()
     damage(FL_DAMAGE_SCROLL);
     return EventStatus::Handled;
 }
-LogDisplay::EventStatus LogDisplay::handleMouseScroll(const int event) const
+
+LogDisplay::EventStatus LogDisplay::handleMouseScrolled(const int event) const
 {
-    if (vScrollBar->handle(event))
+    if (Fl::event_inside(this))
     {
         return EventStatus::Handled;
     }
@@ -471,9 +494,33 @@ int LogDisplay::getFirstLineIdx() const
     return vScrollBar->value() - 1;
 }
 
+int LogDisplay::getHorizontalOffset() const
+{
+    return hScrollBar->value() - 1;
+}
+
 int LogDisplay::getLineHeight() const
 {
     return fl_height(textFont, textSize);
+}
+
+int LogDisplay::getMaxLineWidth() const
+{
+    // TODO: This is very stupid idea to measure the width of every line.
+    // I should get the number of characters and multiply by the average
+    // width of a character.
+    // Or I can do something similar to Visual Studio Code, where it measures
+    // the lines when are displayed and the horizontal scrollbar is updated
+    // accordingly.
+    double maxLineLength = 0;
+    for (const auto& line : lines)
+    {
+        int lineLength = line.second - line.first;
+        double lineWidth = fl_width(data + line.first, lineLength);
+        maxLineLength = std::max<double>(maxLineLength, lineWidth);
+    }
+
+    return static_cast<int>(maxLineLength);
 }
 
 void LogDisplay::setSelectionStart(const int mouseX, const int mouseY)
@@ -565,7 +612,8 @@ size_t LogDisplay::getCharIdxFromRowAndMousePos(const size_t row, const int mous
         return lines[row].first;
     }
 
-    const int mousePos = mouseX - textArea.x; // relative to text area
+    const int mousePos =
+        mouseX - textArea.x + getHorizontalOffset(); // relative to text area including horizontal offset
     const auto [lineBegin, lineEnd] = lines[row];
 
     const size_t columnBegin = lineBegin;
@@ -588,6 +636,11 @@ size_t LogDisplay::getCharIdxFromRowAndMousePos(const size_t row, const int mous
 }
 
 void LogDisplay::vScrollCallback(Fl_Scrollbar* w, LogDisplay* pThis)
+{
+    pThis->damage(FL_DAMAGE_SCROLL);
+}
+
+void LogDisplay::hScrollCallback(Fl_Scrollbar* w, LogDisplay* pThis)
 {
     pThis->damage(FL_DAMAGE_SCROLL);
 }
