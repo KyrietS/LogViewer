@@ -393,11 +393,12 @@ LogDisplay::EventStatus LogDisplay::handleMouseDragged()
         size_t row = getRowByMousePos(Fl::event_y());
         selection.end = lines[row].second + 1;
     }
-    else if (Fl::event_inside(textArea.x, textArea.y, textArea.w, textArea.h))
+    else
     {
         cursorPos = getCharIdxFromMousePos(Fl::event_x(), Fl::event_y());
         setSelectionEnd(Fl::event_x(), Fl::event_y());
     }
+    cursorPos = selection.end;
     damage(FL_DAMAGE_SCROLL);
     return EventStatus::Handled;
 }
