@@ -386,8 +386,18 @@ LogDisplay::EventStatus LogDisplay::handleMousePressed()
 }
 LogDisplay::EventStatus LogDisplay::handleMouseDragged()
 {
-    cursorPos = getCharIdxFromMousePos(Fl::event_x(), Fl::event_y());
-    setSelectionEnd(Fl::event_x(), Fl::event_y());
+    if (Fl::event_inside(lineNumbersArea.x, lineNumbersArea.y, lineNumbersArea.w, lineNumbersArea.h))
+    {
+        // TODO: Move to separate function
+        // Something like: extendSelectionTo(size_t)
+        size_t row = getRowByMousePos(Fl::event_y());
+        selection.end = lines[row].second + 1;
+    }
+    else if (Fl::event_inside(textArea.x, textArea.y, textArea.w, textArea.h))
+    {
+        cursorPos = getCharIdxFromMousePos(Fl::event_x(), Fl::event_y());
+        setSelectionEnd(Fl::event_x(), Fl::event_y());
+    }
     damage(FL_DAMAGE_SCROLL);
     return EventStatus::Handled;
 }
