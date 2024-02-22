@@ -29,6 +29,7 @@ class LogDisplay : public Fl_Group
     void drawTextLine(size_t lineBegin, size_t lineEnd, int baseline) const;
     void drawLineNumber(int lineNumber, int baseline) const;
     void recalcSize();
+    int calcLineNumberWidth() const;
 
     EventStatus handleEvent(int event);
     EventStatus handleMousePressed();
@@ -65,8 +66,6 @@ class LogDisplay : public Fl_Group
     {
         int x, y, w, h;
     } lineNumbersArea;
-    int lineNumbersWidth = 50;
-    int lineNumbersMargin = 5;
     Fl_Color lineNumbersColor = fl_rgb_color(150, 150, 150);
     Fl_Color lineNumbersBgColor = fl_rgb_color(245, 245, 245);
 

@@ -293,8 +293,8 @@ void LogDisplay::drawLineNumber(int lineNumber, int baseline) const
     fl_push_clip(lineNumbersArea.x, lineNumbersArea.y, lineNumbersArea.w, lineNumbersArea.h);
     std::string lineNumberStr = std::to_string(lineNumber);
     fl_color(lineNumbersColor);
-    fl_draw(lineNumberStr.c_str(), lineNumbersArea.x + lineNumbersMargin, baseline - lineHeight + fl_descent(),
-            lineNumbersArea.w - 2 * lineNumbersMargin, lineHeight, FL_ALIGN_RIGHT);
+    fl_draw(lineNumberStr.c_str(), lineNumbersArea.x, baseline - lineHeight + fl_descent(),
+            lineNumbersArea.w - RIGHT_MARGIN, lineHeight, FL_ALIGN_RIGHT);
     fl_pop_clip();
 }
 
@@ -306,20 +306,34 @@ void LogDisplay::recalcSize()
     int H = h() - Fl::box_dh(box());
 
     const int scrollsize = Fl::scrollbar_size();
-
-    textArea.x = X + lineNumbersWidth + LEFT_MARGIN;
-    textArea.y = Y + TOP_MARGIN;
-    textArea.w = W - LEFT_MARGIN - RIGHT_MARGIN - lineNumbersWidth - scrollsize;
-    textArea.h = H - TOP_MARGIN - BOTTOM_MARGIN;
+    const int lineNumbersWidth = calcLineNumberWidth();
 
     lineNumbersArea.x = X;
     lineNumbersArea.y = Y;
-    lineNumbersArea.w = lineNumbersWidth;
+    lineNumbersArea.w = lineNumbersWidth + LEFT_MARGIN + RIGHT_MARGIN;
     lineNumbersArea.h = H;
+
+    textArea.x = X + lineNumbersArea.w + LEFT_MARGIN;
+    textArea.y = Y + TOP_MARGIN;
+    textArea.w = W - LEFT_MARGIN - RIGHT_MARGIN - lineNumbersArea.w - scrollsize;
+    textArea.h = H - TOP_MARGIN - BOTTOM_MARGIN;
 
     vScrollBar->resize(X + W - scrollsize, textArea.y - TOP_MARGIN, scrollsize,
                        textArea.h + TOP_MARGIN + BOTTOM_MARGIN);
     vScrollBar->value(vScrollBar->value(), howManyLinesCanFit(), 1, static_cast<int>(lines.size()));
+}
+
+int LogDisplay::calcLineNumberWidth() const
+{
+    size_t numOfLines = lines.size();
+    std::string maxLineNumber = std::to_string(numOfLines);
+    for (char& digit : maxLineNumber)
+    {
+        digit = '0'; // Probably the widest digit
+    }
+
+    fl_font(textFont, textSize);
+    return static_cast<int>(std::ceil(fl_width(maxLineNumber.c_str(), maxLineNumber.size())));
 }
 
 LogDisplay::EventStatus LogDisplay::handleMousePressed()
