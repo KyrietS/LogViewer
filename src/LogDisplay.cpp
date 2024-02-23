@@ -55,7 +55,7 @@ LogDisplay::LogDisplay(int X, int Y, int W, int H, const char* l) : Fl_Group(X, 
 
 LogDisplay::~LogDisplay() = default;
 
-void LogDisplay::setData(const char* data, size_t size)
+void LogDisplay::setData(const char* data, const size_t size)
 {
     this->data = data;
     this->dataSize = size;
@@ -130,7 +130,7 @@ int LogDisplay::handle(const int event)
 {
     // I will pass the event to child widgets but I will not return early if they handled it.
     // No matter the result I will always continue to handle the event in this parent widget.
-    int childHandled = Fl_Group::handle(event);
+    const int childHandled = Fl_Group::handle(event);
 
     // The widget is not active
     if (!active_r() || !window())
@@ -163,10 +163,11 @@ LogDisplay::EventStatus LogDisplay::handleEvent(const int event)
         setCursor(FL_CURSOR_DEFAULT);
         return EventStatus::Handled;
 
+    case FL_FOCUS:
+        return EventStatus::Handled;
+
     case FL_UNFOCUS:
         setCursor(FL_CURSOR_DEFAULT);
-        return EventStatus::Handled;
-    case FL_FOCUS:
         return EventStatus::Handled;
 
     case FL_KEYBOARD:
@@ -233,7 +234,7 @@ void LogDisplay::drawText()
     }
 }
 
-void LogDisplay::drawSelection(const size_t startPos, const size_t endPos, int baseline) const
+void LogDisplay::drawSelection(const size_t startPos, const size_t endPos, const int baseline) const
 {
     auto selectionStart = selection.begin;
     auto selectionEnd = selection.end;
@@ -250,7 +251,7 @@ void LogDisplay::drawSelection(const size_t startPos, const size_t endPos, int b
     if (selectionStart >= startPos && selectionStart <= endPos)
     {
         // TODO: Create TextArea class and add this logic to a method.
-        int textAreaWithOffset = textArea.x - getHorizontalOffset();
+        const int textAreaWithOffset = textArea.x - getHorizontalOffset();
         const int lineHeight = getLineHeight();
         const double selectionOffset =
             textAreaWithOffset + fl_width(data + startPos, static_cast<int>(selectionStart - startPos));
@@ -307,14 +308,14 @@ void LogDisplay::drawTextLine(const size_t lineBegin, const size_t lineEnd, cons
     fl_draw(data + selectedLineEnd, afterSelectionLength, textPosition + afterSelectionOffset, baseline);
 }
 
-void LogDisplay::drawLineNumber(int lineNumber, int baseline, Fl_Color bgcolor) const
+void LogDisplay::drawLineNumber(const int lineNumber, const int baseline, const Fl_Color bgcolor) const
 {
-    int lineHeight = getLineHeight();
+    const int lineHeight = getLineHeight();
     fl_push_clip(lineNumbersArea.x, lineNumbersArea.y, lineNumbersArea.w, lineNumbersArea.h);
 
     fl_rectf(lineNumbersArea.x, baseline - lineHeight + fl_descent(), lineNumbersArea.w, lineHeight, bgcolor);
 
-    std::string lineNumberStr = std::to_string(lineNumber);
+    const std::string lineNumberStr = std::to_string(lineNumber);
     fl_color(lineNumbersColor);
     fl_draw(lineNumberStr.c_str(), lineNumbersArea.x, baseline - lineHeight + fl_descent(),
             lineNumbersArea.w - RIGHT_MARGIN, lineHeight, FL_ALIGN_RIGHT);
@@ -323,10 +324,10 @@ void LogDisplay::drawLineNumber(int lineNumber, int baseline, Fl_Color bgcolor) 
 
 void LogDisplay::recalcSize()
 {
-    int X = x() + Fl::box_dx(box());
-    int Y = y() + Fl::box_dy(box());
-    int W = w() - Fl::box_dw(box());
-    int H = h() - Fl::box_dh(box());
+    const int X = x() + Fl::box_dx(box());
+    const int Y = y() + Fl::box_dy(box());
+    const int W = w() - Fl::box_dw(box());
+    const int H = h() - Fl::box_dh(box());
 
     const int scrollsize = Fl::scrollbar_size();
     const int lineNumbersWidth = calcLineNumberWidth();
@@ -350,7 +351,7 @@ void LogDisplay::recalcSize()
 
 int LogDisplay::calcLineNumberWidth() const
 {
-    size_t numOfLines = lines.size();
+    const size_t numOfLines = lines.size();
     std::string maxLineNumber = std::to_string(numOfLines);
     for (char& digit : maxLineNumber)
     {
@@ -358,7 +359,7 @@ int LogDisplay::calcLineNumberWidth() const
     }
 
     fl_font(textFont, textSize);
-    return static_cast<int>(std::ceil(fl_width(maxLineNumber.c_str(), maxLineNumber.size())));
+    return static_cast<int>(std::ceil(fl_width(maxLineNumber.c_str(), static_cast<int>(maxLineNumber.size()))));
 }
 
 LogDisplay::EventStatus LogDisplay::handleMousePressed()
@@ -415,7 +416,7 @@ LogDisplay::EventStatus LogDisplay::handleMouseDragged()
     {
         // TODO: Move to separate function
         // Something like: extendSelectionTo(size_t)
-        size_t row = getRowByMousePos(Fl::event_y());
+        const size_t row = getRowByMousePos(Fl::event_y());
         selection.end = lines[row].second + 1;
     }
     else
@@ -513,10 +514,10 @@ int LogDisplay::getMaxLineWidth() const
     // the lines when are displayed and the horizontal scrollbar is updated
     // accordingly.
     double maxLineLength = 0;
-    for (const auto& line : lines)
+    for (const auto& [lineBegin, lineEnd] : lines)
     {
-        int lineLength = line.second - line.first;
-        double lineWidth = fl_width(data + line.first, lineLength);
+        const size_t lineLength = lineEnd - lineBegin;
+        double lineWidth = fl_width(data + lineBegin, static_cast<int>(lineLength));
         maxLineLength = std::max<double>(maxLineLength, lineWidth);
     }
 
@@ -556,7 +557,7 @@ void LogDisplay::selectWord(const int mouseX, const int mouseY)
     selection.end = selectionEnd;
     cursorPos = selection.end;
 }
-void LogDisplay::selectLine(int mouseY)
+void LogDisplay::selectLine(const int mouseY)
 {
     const size_t row = getRowByMousePos(mouseY);
     const size_t lineBegin = lines[row].first;

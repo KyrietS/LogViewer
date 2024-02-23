@@ -68,7 +68,7 @@ class LogDisplay : public Fl_Group
     struct
     {
         int x, y, w, h;
-    } lineNumbersArea;
+    } lineNumbersArea{};
     Fl_Color lineNumbersColor = fl_rgb_color(150, 150, 150);
     Fl_Color lineNumbersBgColor = fl_rgb_color(245, 245, 245);
 
