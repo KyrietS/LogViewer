@@ -14,7 +14,7 @@ cmake --build build
 
 ## License
 
-Copyright © 2023 Sebastian Fojcik \
+Copyright © 2023-2024 Sebastian Fojcik \
 Use of this software is granted under the terms of the MIT License.
 
-See the [LICENCE](LICENSE) for the full license text.
+See the [LICENCE](LICENSE.txt) for the full license text.
