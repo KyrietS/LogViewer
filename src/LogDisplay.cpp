@@ -26,8 +26,7 @@ bool isWordSeparator(const char c)
 
 LogDisplay::LogDisplay(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l)
 {
-    // TODO: Memory leak
-    vScrollBar = new Fl_Scrollbar(0, 0, 1, 1);
+    vScrollBar = std::make_unique<Fl_Scrollbar>(0, 0, 1, 1);
     vScrollBar->callback(reinterpret_cast<Fl_Callback*>(vScrollCallback), this);
 
     // TODO: Move to some recalc function
@@ -35,7 +34,7 @@ LogDisplay::LogDisplay(int X, int Y, int W, int H, const char* l) : Fl_Group(X, 
     vScrollBar->linesize(3);
     vScrollBar->set_visible();
 
-    hScrollBar = new Fl_Scrollbar(0, 0, 1, 1);
+    hScrollBar = std::make_unique<Fl_Scrollbar>(0, 0, 1, 1);
     hScrollBar->type(FL_HORIZONTAL);
     hScrollBar->callback(reinterpret_cast<Fl_Callback*>(hScrollCallback), this);
     hScrollBar->value(1, 1, 1, 1);

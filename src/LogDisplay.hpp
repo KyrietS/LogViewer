@@ -1,6 +1,7 @@
 #pragma once
 #include <FL/Fl_Group.H>
 #include <FL/Fl_Scrollbar.H>
+#include <memory>
 #include <vector>
 
 class LogDisplay : public Fl_Group
@@ -107,6 +108,6 @@ class LogDisplay : public Fl_Group
     Fl_Color textColor;
 
     // Child widgets
-    Fl_Scrollbar* vScrollBar;
-    Fl_Scrollbar* hScrollBar;
+    std::unique_ptr<Fl_Scrollbar> vScrollBar;
+    std::unique_ptr<Fl_Scrollbar> hScrollBar;
 };
