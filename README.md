@@ -1,15 +1,17 @@
-# Log Annihilator
-[![Release](https://img.shields.io/github/v/release/KyrietS/LogAnnihilator?include_prereleases&sort=semver)](https://github.com/KyrietS/LogAnnihilator/releases)
-[![Lincense](https://img.shields.io/github/license/KyrietS/LogAnnihilator)](LICENSE.txt)
-[![Build](https://github.com/KyrietS/LogAnnihilator/actions/workflows/build.yml/badge.svg)](https://github.com/KyrietS/LogAnnihilator/actions/workflows/build.yml)
-[![Formatting](https://github.com/KyrietS/LogAnnihilator/actions/workflows/formatting.yml/badge.svg)](https://github.com/KyrietS/LogAnnihilator/actions/workflows/formatting.yml)
+# Log Alligator 🐊
+[![Release](https://img.shields.io/github/v/release/KyrietS/LogAlligator?include_prereleases&sort=semver)](https://github.com/KyrietS/LogAlligator/releases)
+[![Lincense](https://img.shields.io/github/license/KyrietS/LogAlligator)](LICENSE.txt)
+[![Build](https://github.com/KyrietS/LogAlligator/actions/workflows/build.yml/badge.svg)](https://github.com/KyrietS/LogAlligator/actions/workflows/build.yml)
+[![Formatting](https://github.com/KyrietS/LogAlligator/actions/workflows/formatting.yml/badge.svg)](https://github.com/KyrietS/LogAlligator/actions/workflows/formatting.yml)
 
-Log viewer application for searching and filtering log files.
+Log viewer application for searching and filtering **huge log files**.
 
 ## Building
 ```
-cmake -B build
-cmake --build build
+git clone git@github.com:KyrietS/LogAlligator.git
+cd LogAlligator
+cmake -S . -B build
+cmake --build build --target LogAlligator
 ```
 
 ## License
