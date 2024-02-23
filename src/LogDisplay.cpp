@@ -5,6 +5,7 @@
 
 #include <array>
 #include <cassert>
+#include <cmath>
 #include <iostream>
 #include <span>
 #include <string>
@@ -145,7 +146,7 @@ LogDisplay::EventStatus LogDisplay::handleEvent(const int event)
         return handleMouseDragged();
 
     case FL_MOUSEWHEEL:
-        return handleMouseScrolled(event);
+        return handleMouseScrolled();
 
     case FL_ENTER:
     case FL_MOVE:
@@ -173,7 +174,7 @@ LogDisplay::EventStatus LogDisplay::handleEvent(const int event)
 
 void LogDisplay::drawText()
 {
-    if (data == nullptr)
+    if (data == nullptr || lines.empty())
     {
         return;
     }
@@ -184,9 +185,9 @@ void LogDisplay::drawText()
     const int lineHeight = getLineHeight();
     int baseline = textArea.y + lineHeight - fl_descent();
 
-    const int topLineIndex = this->getIndexOfTopDisplayedLine();
+    const size_t topLineIndex = this->getIndexOfTopDisplayedLine();
     assert(topLineIndex < lines.size());
-    const auto howManyLinesToBeDrawn =
+    const size_t howManyLinesToBeDrawn =
         std::min(static_cast<size_t>(howManyLinesCanFit() + 1), lines.size() - topLineIndex);
     const size_t bottomLineIndex = topLineIndex + howManyLinesToBeDrawn;
 
@@ -422,7 +423,7 @@ LogDisplay::EventStatus LogDisplay::handleMouseDragged()
     return EventStatus::Handled;
 }
 
-LogDisplay::EventStatus LogDisplay::handleMouseScrolled(const int event) const
+LogDisplay::EventStatus LogDisplay::handleMouseScrolled() const
 {
     if (Fl::event_inside(this))
     {
@@ -488,9 +489,12 @@ int LogDisplay::howManyLinesCanFit() const
 {
     return textArea.h / getLineHeight();
 }
-int LogDisplay::getIndexOfTopDisplayedLine() const
+
+size_t LogDisplay::getIndexOfTopDisplayedLine() const
 {
-    return vScrollBar->value() - 1;
+    const int index = vScrollBar->value() - 1;
+    assert(index >= 0);
+    return index;
 }
 
 int LogDisplay::getHorizontalOffset() const
@@ -627,8 +631,8 @@ size_t LogDisplay::getDataIndexInGivenLine(const size_t lineIndex, const int mou
     size_t columnEnd = lineBegin;
     while (columnEnd <= lineEnd)
     {
-        const int textSize = static_cast<int>(columnEnd - columnBegin);
-        const double textWidth = fl_width(data + columnBegin, textSize);
+        const int textLength = static_cast<int>(columnEnd - columnBegin);
+        const double textWidth = fl_width(data + columnBegin, textLength);
         if (mousePos >= textWidth)
         {
             columnEnd++;
@@ -642,12 +646,12 @@ size_t LogDisplay::getDataIndexInGivenLine(const size_t lineIndex, const int mou
     return lineEnd;
 }
 
-void LogDisplay::vScrollCallback(Fl_Scrollbar* w, LogDisplay* pThis)
+void LogDisplay::vScrollCallback(Fl_Scrollbar*, LogDisplay* pThis)
 {
     pThis->damage(FL_DAMAGE_SCROLL);
 }
 
-void LogDisplay::hScrollCallback(Fl_Scrollbar* w, LogDisplay* pThis)
+void LogDisplay::hScrollCallback(Fl_Scrollbar*, LogDisplay* pThis)
 {
     pThis->damage(FL_DAMAGE_SCROLL);
 }

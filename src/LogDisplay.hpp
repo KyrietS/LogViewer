@@ -37,13 +37,12 @@ class LogDisplay : public Fl_Group
     EventStatus handleMousePressed();
     void handleMousePressedOnTextArea();
     EventStatus handleMouseDragged();
-    EventStatus handleMouseScrolled(int event) const;
+    EventStatus handleMouseScrolled() const;
     EventStatus handleMouseMoved() const;
     EventStatus handleKeyboard();
 
     void setCursor(Fl_Cursor cursorType) const;
     int howManyLinesCanFit() const;
-    int getIndexOfTopDisplayedLine() const;
     int getHorizontalOffset() const;
     int getLineHeight() const;
     void findAndSetGlobalMaxLineWidth(); // This is slow, dont use for files with more than million lines
@@ -55,6 +54,7 @@ class LogDisplay : public Fl_Group
     void selectLine(int mouseY);
     size_t getDataIndex(int mouseX, int mouseY) const;
     size_t getLineIndex(int mouseY) const;
+    size_t getIndexOfTopDisplayedLine() const;
     size_t getDataIndexInGivenLine(size_t lineIndex, int mouseX) const;
 
     std::string_view getSelectedText() const;
