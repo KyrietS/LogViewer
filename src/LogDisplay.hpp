@@ -2,6 +2,7 @@
 #include <FL/Fl_Group.H>
 #include <FL/Fl_Scrollbar.H>
 #include <memory>
+#include <string>
 #include <vector>
 
 class LogDisplay : public Fl_Group
@@ -34,6 +35,7 @@ class LogDisplay : public Fl_Group
 
     EventStatus handleEvent(int event);
     EventStatus handleMousePressed();
+    void handleMousePressedOnTextArea();
     EventStatus handleMouseDragged();
     EventStatus handleMouseScrolled(int event) const;
     EventStatus handleMouseMoved() const;
@@ -41,19 +43,21 @@ class LogDisplay : public Fl_Group
 
     void setCursor(Fl_Cursor cursorType) const;
     int howManyLinesCanFit() const;
-    int getFirstLineIdx() const;
+    int getIndexOfTopDisplayedLine() const;
     int getHorizontalOffset() const;
     int getLineHeight() const;
-    int getMaxLineWidth() const;
+    void findAndSetGlobalMaxLineWidth(); // This is slow, dont use for files with more than million lines
+    void updateMaxLineWidth(size_t lineIndex);
 
     void setSelectionStart(int mouseX, int mouseY);
     void setSelectionEnd(int mouseX, int mouseY);
     void selectWord(int mouseX, int mouseY);
     void selectLine(int mouseY);
-    size_t getCharIdxFromMousePos(int mouseX, int mouseY) const;
-    size_t getRowByMousePos(int mouseY) const;
-    size_t getCharIdxFromRowAndMousePos(size_t row, int mouseX) const;
+    size_t getDataIndex(int mouseX, int mouseY) const;
+    size_t getLineIndex(int mouseY) const;
+    size_t getDataIndexInGivenLine(size_t lineIndex, int mouseX) const;
 
+    std::string_view getSelectedText() const;
     void copySelectionToClipboard() const;
 
     static void vScrollCallback(Fl_Scrollbar* w, LogDisplay* pThis);

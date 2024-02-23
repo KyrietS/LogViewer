@@ -72,11 +72,12 @@ void LogDisplay::setData(const char* data, const size_t size)
         lines.emplace_back(dataSize, dataSize);
     }
 
+    // In some places the line number is cast to int (for example when drawing the line number)
+    // So for now I will allow for a file to have too many lines.
+    assert(lines.size() < std::numeric_limits<int>::max() && "Too many lines!");
+
     const int numberOfLines = static_cast<int>(lines.size());
     vScrollBar->value(1, howManyLinesCanFit(), 1, numberOfLines);
-
-    maxLineWidth = getMaxLineWidth(); // This is time consuming operation!
-    hScrollBar->value(1, textArea.w, 1, maxLineWidth);
 }
 
 const char* LogDisplay::getData() const
@@ -94,13 +95,12 @@ void LogDisplay::draw()
         fl_begin_offscreen(offscreenBuffer);
         {
             drawBackground();
+            drawText();
 
             vScrollBar->damage(FL_DAMAGE_ALL);
             hScrollBar->damage(FL_DAMAGE_ALL);
             update_child(*vScrollBar);
             update_child(*hScrollBar);
-
-            drawText();
         }
         fl_end_offscreen();
 
@@ -178,22 +178,17 @@ void LogDisplay::drawText()
         return;
     }
 
-    const int firstLine = this->getFirstLineIdx();
-    assert(firstLine < lines.size());
-
     fl_color(textColor);
     fl_font(textFont, textSize);
 
     const int lineHeight = getLineHeight();
     int baseline = textArea.y + lineHeight - fl_descent();
 
+    const int topLineIndex = this->getIndexOfTopDisplayedLine();
+    assert(topLineIndex < lines.size());
     const auto howManyLinesToBeDrawn =
-        std::min(static_cast<size_t>(howManyLinesCanFit() + 1), lines.size() - firstLine);
-
-    using IterDiff = decltype(lines)::difference_type;
-    const auto firstLineIter = lines.begin() + static_cast<IterDiff>(firstLine);
-    const auto lastLineIter = firstLineIter + static_cast<IterDiff>(howManyLinesToBeDrawn);
-    const std::span linesSpan(firstLineIter, lastLineIter);
+        std::min(static_cast<size_t>(howManyLinesCanFit() + 1), lines.size() - topLineIndex);
+    const size_t bottomLineIndex = topLineIndex + howManyLinesToBeDrawn;
 
     // draw the background for line numbers on the left
     fl_rectf(lineNumbersArea.x, lineNumbersArea.y, lineNumbersArea.w, lineNumbersArea.h, lineNumbersBgColor);
@@ -201,9 +196,11 @@ void LogDisplay::drawText()
     // draw that little box in the corner of the scrollbars
     fl_rectf(hScrollBar->x() + hScrollBar->w(), hScrollBar->y(), vScrollBar->w(), hScrollBar->h(), FL_BACKGROUND_COLOR);
 
-    int lineNumber = vScrollBar->value();
-    for (const auto& [startPos, endPos] : linesSpan)
+    for (size_t lineIndex = topLineIndex; lineIndex < bottomLineIndex; ++lineIndex)
     {
+        updateMaxLineWidth(lineIndex);
+
+        const auto [startPos, endPos] = lines[lineIndex];
         fl_push_clip(textArea.x, textArea.y, textArea.w, textArea.h);
 
         // Clear line
@@ -220,9 +217,9 @@ void LogDisplay::drawText()
         fl_pop_clip();
 
         // Draw line number
+        const int lineNumber = static_cast<int>(lineIndex + 1);
         drawLineNumber(lineNumber, baseline, isCursorInThisLine ? bgcolor : lineNumbersBgColor);
 
-        lineNumber += 1;
         baseline += lineHeight;
     }
 }
@@ -243,7 +240,6 @@ void LogDisplay::drawSelection(const size_t startPos, const size_t endPos, const
 
     if (selectionStart >= startPos && selectionStart <= endPos)
     {
-        // TODO: Create TextArea class and add this logic to a method.
         const int textAreaWithOffset = textArea.x - getHorizontalOffset();
         const int lineHeight = getLineHeight();
         const double selectionOffset =
@@ -357,40 +353,9 @@ int LogDisplay::calcLineNumberWidth() const
 
 LogDisplay::EventStatus LogDisplay::handleMousePressed()
 {
-    if (Fl::event_inside(textArea.x, textArea.y, textArea.w, textArea.h)) // TODO: Move to separate function
+    if (Fl::event_inside(textArea.x, textArea.y, textArea.w, textArea.h))
     {
-        take_focus();
-        cursorPos = getCharIdxFromMousePos(Fl::event_x(), Fl::event_y());
-
-        // TODO: Move to separate function
-        if (Fl::event_shift())
-        {
-            setSelectionEnd(Fl::event_x(), Fl::event_y());
-            damage(FL_DAMAGE_SCROLL);
-            return EventStatus::Handled;
-        }
-
-        // Windows recognizes the third click as a normal click, so I need to hand-craft the triple click with a timer
-        const bool windowsCompatTripleClick = Fl::seconds_since(lastDoubleClick) <= 0.5 &&
-                                              Fl::event_x() == doubleClickPos.x && Fl::event_y() == doubleClickPos.y;
-
-        const bool doubleClick = Fl::event_clicks() == 1;
-        const bool tripleClick = Fl::event_clicks() == 2 || windowsCompatTripleClick;
-
-        if (tripleClick)
-        {
-            selectLine(Fl::event_y());
-        }
-        else if (doubleClick)
-        {
-            selectWord(Fl::event_x(), Fl::event_y());
-            lastDoubleClick = Fl::now();
-            doubleClickPos.x = Fl::event_x();
-            doubleClickPos.y = Fl::event_y();
-        }
-        else
-            setSelectionStart(Fl::event_x(), Fl::event_y());
-        damage(FL_DAMAGE_SCROLL);
+        handleMousePressedOnTextArea();
         return EventStatus::Handled;
     }
 
@@ -403,13 +368,49 @@ LogDisplay::EventStatus LogDisplay::handleMousePressed()
 
     return EventStatus::NotHandled;
 }
+
+void LogDisplay::handleMousePressedOnTextArea()
+{
+    take_focus();
+    cursorPos = getDataIndex(Fl::event_x(), Fl::event_y());
+
+    // Selection with a shift key being held
+    if (Fl::event_shift())
+    {
+        setSelectionEnd(Fl::event_x(), Fl::event_y());
+        damage(FL_DAMAGE_SCROLL);
+        return;
+    }
+
+    // Windows recognizes the third click as a normal click, so I need to hand-craft the triple click with a timer
+    const bool windowsCompatTripleClick = Fl::seconds_since(lastDoubleClick) <= 0.5 &&
+                                          Fl::event_x() == doubleClickPos.x && Fl::event_y() == doubleClickPos.y;
+
+    const bool doubleClick = Fl::event_clicks() == 1;
+    const bool tripleClick = Fl::event_clicks() == 2 || windowsCompatTripleClick;
+
+    if (tripleClick)
+    {
+        selectLine(Fl::event_y());
+    }
+    else if (doubleClick)
+    {
+        selectWord(Fl::event_x(), Fl::event_y());
+        lastDoubleClick = Fl::now();
+        doubleClickPos.x = Fl::event_x();
+        doubleClickPos.y = Fl::event_y();
+    }
+    else
+        setSelectionStart(Fl::event_x(), Fl::event_y());
+
+    damage(FL_DAMAGE_SCROLL);
+}
+
 LogDisplay::EventStatus LogDisplay::handleMouseDragged()
 {
     if (Fl::event_inside(lineNumbersArea.x, lineNumbersArea.y, lineNumbersArea.w, lineNumbersArea.h))
     {
-        // TODO: Move to separate function
-        // Something like: extendSelectionTo(size_t)
-        const size_t row = getRowByMousePos(Fl::event_y());
+        const size_t row = getLineIndex(Fl::event_y());
         selection.end = lines[row].second + 1;
     }
     else
@@ -462,14 +463,18 @@ LogDisplay::EventStatus LogDisplay::handleKeyboard()
     return EventStatus::NotHandled;
 }
 
+std::string_view LogDisplay::getSelectedText() const
+{
+    const size_t selectionStart = std::min(selection.begin, selection.end);
+    const size_t selectionEnd = std::max(selection.begin, selection.end);
+    return {data + selectionStart, selectionEnd - selectionStart};
+}
+
 void LogDisplay::copySelectionToClipboard() const
 {
     constexpr int clipboardDestination = 1; // 0 = selection buffer, 1 = clipboard, 2 = both
-    // TODO: Move getting selection text to a separate function
-    const size_t selectionStart = std::min(selection.begin, selection.end);
-    const size_t selectionEnd = std::max(selection.begin, selection.end);
-    const int selectionLength = static_cast<int>(selectionEnd - selectionStart);
-    Fl::copy(data + selectionStart, selectionLength, clipboardDestination);
+    const std::string_view selectedText = getSelectedText();
+    Fl::copy(selectedText.data(), static_cast<int>(selectedText.length()), clipboardDestination);
 }
 
 void LogDisplay::setCursor(const Fl_Cursor cursorType) const
@@ -483,7 +488,7 @@ int LogDisplay::howManyLinesCanFit() const
 {
     return textArea.h / getLineHeight();
 }
-int LogDisplay::getFirstLineIdx() const
+int LogDisplay::getIndexOfTopDisplayedLine() const
 {
     return vScrollBar->value() - 1;
 }
@@ -498,14 +503,8 @@ int LogDisplay::getLineHeight() const
     return fl_height(textFont, textSize);
 }
 
-int LogDisplay::getMaxLineWidth() const
+void LogDisplay::findAndSetGlobalMaxLineWidth()
 {
-    // TODO: This is very stupid idea to measure the width of every line.
-    // I should get the number of characters and multiply by the average
-    // width of a character.
-    // Or I can do something similar to Visual Studio Code, where it measures
-    // the lines when are displayed and the horizontal scrollbar is updated
-    // accordingly.
     double maxLineLength = 0;
     for (const auto& [lineBegin, lineEnd] : lines)
     {
@@ -514,25 +513,38 @@ int LogDisplay::getMaxLineWidth() const
         maxLineLength = std::max<double>(maxLineLength, lineWidth);
     }
 
-    return static_cast<int>(maxLineLength);
+    maxLineWidth = static_cast<int>(maxLineLength);
+}
+
+void LogDisplay::updateMaxLineWidth(const size_t lineIndex)
+{
+    const auto [lineBegin, lineEnd] = lines[lineIndex];
+    const size_t lineLength = lineEnd - lineBegin;
+    const double lineWidth = fl_width(data + lineBegin, static_cast<int>(lineLength));
+
+    if (lineWidth > maxLineWidth)
+    {
+        maxLineWidth = static_cast<int>(lineWidth);
+        hScrollBar->value(hScrollBar->value(), textArea.w, 1, maxLineWidth);
+    }
 }
 
 void LogDisplay::setSelectionStart(const int mouseX, const int mouseY)
 {
-    const size_t selectionStartIndex = getCharIdxFromMousePos(mouseX, mouseY);
+    const size_t selectionStartIndex = getDataIndex(mouseX, mouseY);
     selection.begin = selectionStartIndex;
     selection.end = selectionStartIndex;
 }
 
 void LogDisplay::setSelectionEnd(const int mouseX, const int mouseY)
 {
-    const size_t selectionEndIndex = getCharIdxFromMousePos(mouseX, mouseY);
+    const size_t selectionEndIndex = getDataIndex(mouseX, mouseY);
     selection.end = selectionEndIndex;
 }
 
 void LogDisplay::selectWord(const int mouseX, const int mouseY)
 {
-    const size_t selectionEndIndex = getCharIdxFromMousePos(mouseX, mouseY);
+    const size_t selectionEndIndex = getDataIndex(mouseX, mouseY);
 
     size_t selectionBegin = selectionEndIndex;
     size_t selectionEnd = selectionEndIndex;
@@ -552,7 +564,7 @@ void LogDisplay::selectWord(const int mouseX, const int mouseY)
 }
 void LogDisplay::selectLine(const int mouseY)
 {
-    const size_t row = getRowByMousePos(mouseY);
+    const size_t row = getLineIndex(mouseY);
     const size_t lineBegin = lines[row].first;
     const size_t lineEnd = lines[row].second + 1; // including newline character
     selection.begin = lineBegin;
@@ -560,13 +572,13 @@ void LogDisplay::selectLine(const int mouseY)
     cursorPos = selection.end;
 }
 
-size_t LogDisplay::getCharIdxFromMousePos(const int mouseX, const int mouseY) const
+size_t LogDisplay::getDataIndex(const int mouseX, const int mouseY) const
 {
-    const size_t row = getRowByMousePos(mouseY);
-    return getCharIdxFromRowAndMousePos(row, mouseX);
+    const size_t lineIndex = getLineIndex(mouseY);
+    return getDataIndexInGivenLine(lineIndex, mouseX);
 }
 
-size_t LogDisplay::getRowByMousePos(const int mouseY) const
+size_t LogDisplay::getLineIndex(const int mouseY) const
 {
     if (mouseY < textArea.y)
     {
@@ -589,26 +601,27 @@ size_t LogDisplay::getRowByMousePos(const int mouseY) const
         rowEnd += lineHeight;
         if (mousePos >= rowBegin && mousePos <= rowEnd)
         {
-            return i + getFirstLineIdx();
+            return i + getIndexOfTopDisplayedLine();
         }
     }
     return 0;
 }
-// Return the index of the character pointed by the mouse.
-size_t LogDisplay::getCharIdxFromRowAndMousePos(const size_t row, const int mouseX) const
+
+// Return the index of the character in a line pointed by the mouse.
+size_t LogDisplay::getDataIndexInGivenLine(const size_t lineIndex, const int mouseX) const
 {
-    if (row >= lines.size())
+    if (lineIndex >= lines.size())
     {
         return dataSize;
     }
     if (mouseX < textArea.x)
     {
-        return lines[row].first;
+        return lines[lineIndex].first;
     }
 
     const int mousePos =
         mouseX - textArea.x + getHorizontalOffset(); // relative to text area including horizontal offset
-    const auto [lineBegin, lineEnd] = lines[row];
+    const auto [lineBegin, lineEnd] = lines[lineIndex];
 
     const size_t columnBegin = lineBegin;
     size_t columnEnd = lineBegin;
