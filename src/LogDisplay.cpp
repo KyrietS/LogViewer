@@ -28,18 +28,12 @@ LogDisplay::LogDisplay(int X, int Y, int W, int H, const char* l) : Fl_Group(X, 
 {
     vScrollBar = std::make_unique<Fl_Scrollbar>(0, 0, 1, 1);
     vScrollBar->callback(reinterpret_cast<Fl_Callback*>(vScrollCallback), this);
-
-    // TODO: Move to some recalc function
-    vScrollBar->value(1, 1, 1, 1);
     vScrollBar->linesize(3);
-    vScrollBar->set_visible();
 
     hScrollBar = std::make_unique<Fl_Scrollbar>(0, 0, 1, 1);
     hScrollBar->type(FL_HORIZONTAL);
     hScrollBar->callback(reinterpret_cast<Fl_Callback*>(hScrollCallback), this);
-    hScrollBar->value(1, 1, 1, 1);
     hScrollBar->linesize(50);
-    hScrollBar->set_visible();
 
     textFont = FL_HELVETICA;
     textSize = FL_NORMAL_SIZE;
