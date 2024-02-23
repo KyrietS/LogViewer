@@ -1,22 +1,20 @@
-#include "FL/Fl_Browser.H"
-#include "FL/Fl_File_Browser.H"
-#include "FL/Fl_File_Chooser.H"
-#include "FL/Fl_Free.H"
-#include "FL/Fl_Native_File_Chooser.H"
-#include "FL/Fl_Text_Display.H"
-#include "FL/fl_ask.H"
 #include "LogDisplay.hpp"
 
 #include <FL/Fl.H>
-#include <FL/Fl_Box.H>
-#include <FL/Fl_Button.H>
+#include <FL/Fl_File_Chooser.H>
+#include <FL/Fl_Text_Display.H>
 #include <FL/Fl_Window.H>
 #include <cassert>
 #include <fstream>
 #include <string>
 
-auto* buffer = new Fl_Text_Buffer();
-std::string fileContent;
+std::string readFile(const std::string& filename)
+{
+    std::ifstream file(filename);
+    assert(file.is_open());
+    const std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+    return content;
+}
 
 int main()
 {
@@ -24,24 +22,9 @@ int main()
 
     auto* window = new Fl_Window(600, 500);
 
-    auto* logDisplay = new LogDisplay(0, 0, window->w(), 240);
-
-    std::ifstream file("pan-tadeusz.txt");
-    assert(file.is_open());
-    std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-    fileContent = std::move(content);
-
-    // const char* data =
-    // "yyyyyyyyyy\niiTTiiiiiiiii\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n13\n14\n15\n16\n17\n18\n19\n20\n21\n22\n23\n24\n25";
-    // logDisplay->setData(data, strlen(data));
-    const char* data = fileContent.c_str();
-    logDisplay->setData(data, fileContent.size());
-
-    auto* textDisplay = new Fl_Text_Display(0, 250, window->w(), 240);
-    textDisplay->buffer(buffer);
-    // textDisplay->buffer()->text("Hello, World!\nHello, World!\nHello, World!\nHello, World!\nHello, "
-    //                             "World!\nx\nx\nx\nx\nx\nx\nx\nx\nx\nx\nx\nx\nx\nx\nx\nx\nx\nx\nx\nx\nx\n");
-    textDisplay->buffer()->text(fileContent.c_str());
+    auto* logDisplay = new LogDisplay(0, 0, window->w(), window->h());
+    const std::string content = readFile("pan-tadeusz.txt");
+    logDisplay->setData(content.c_str(), content.size());
 
     // Center the window on the screen.
     window->position((Fl::w() - window->w()) / 2, (Fl::h() - window->h()) / 2);
@@ -55,10 +38,6 @@ int main()
         }
     });
     window->show();
-
-    // auto* chooser = new Fl_Native_File_Chooser();
-    // chooser->title("Choose a file");
-    // chooser->show();
 
     return Fl::run();
 }
