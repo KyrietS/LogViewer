@@ -23,11 +23,11 @@ int main()
     // TODO: Move window to a separate class.
     Fl_Window window(600, 500);
 
-    LogDisplay logDisplay(0, 25, window.w(), window.h() - 25);
+    auto* logDisplay = new LogDisplay(0, 25, window.w(), window.h() - 25);
     const std::string content = readFile("pan-tadeusz.txt");
-    logDisplay.setData(content.c_str(), content.size());
+    logDisplay->setData(content.c_str(), content.size());
 
-    MenuBar menu;
+    auto* menu = new MenuBar();
 
     // Center the window on the screen.
     window.position((Fl::w() - window.w()) / 2, (Fl::h() - window.h()) / 2);

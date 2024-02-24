@@ -15,7 +15,7 @@ class MenuBar
         const auto* window = Fl_Group::current();
         assert(window != nullptr && "No current window");
 
-        menu = std::make_unique<Fl_Menu_Bar>(0, 0, window->w(), 25);
+        menu = new Fl_Menu_Bar(0, 0, window->w(), 25);
         menu->box(FL_FLAT_BOX);
         menu->menu_box(FL_UP_BOX);
         buildMenu();
@@ -86,5 +86,6 @@ class MenuBar
         }
     }
 
-    std::unique_ptr<Fl_Menu_Bar> menu;
+    // The memory is managed by FLTK. No need to call delete manually.
+    Fl_Menu_Bar* menu;
 };

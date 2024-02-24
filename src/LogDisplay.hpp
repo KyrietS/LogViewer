@@ -113,7 +113,7 @@ class LogDisplay : public Fl_Group
     Fl_Fontsize textSize;
     Fl_Color textColor;
 
-    // Child widgets
-    std::unique_ptr<Fl_Scrollbar> vScrollBar;
-    std::unique_ptr<Fl_Scrollbar> hScrollBar;
+    // Child widgets (will be deleted from memory by Fl_Group desctructor)
+    Fl_Scrollbar* vScrollBar;
+    Fl_Scrollbar* hScrollBar;
 };
