@@ -28,9 +28,9 @@ class MenuBar
         Fl_Callback* noCallback = nullptr;
         constexpr int noShortcut = 0;
 
-        menu->add("File/Open File...", FL_CTRL + 'o', openFileDialog, noUserData, 0);
-        menu->add("File/Save", FL_CTRL + 's', noCallback, noUserData, FL_MENU_INACTIVE);
-        menu->add("File/Save As...", FL_CTRL + FL_SHIFT + 's', saveFileDialog, noUserData, 0);
+        menu->add("File/@fileopen  Open File...", FL_CTRL + 'o', openFileDialog, noUserData, 0);
+        menu->add("File/@filesave  Save", FL_CTRL + 's', noCallback, noUserData, FL_MENU_INACTIVE);
+        menu->add("File/@filesaveas  Save As...", FL_CTRL + FL_SHIFT + 's', saveFileDialog, noUserData, 0);
         menu->add("File/Close File", FL_CTRL + 'w', noCallback, noUserData, FL_MENU_INACTIVE);
         menu->add("File/Settings", noShortcut, noCallback, noUserData, FL_MENU_INACTIVE | FL_MENU_DIVIDER);
         menu->add("File/Quit", FL_CTRL + 'q', quitCallback);
