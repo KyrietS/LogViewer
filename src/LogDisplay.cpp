@@ -92,7 +92,7 @@ void LogDisplay::draw()
     fl_push_clip(x(), y(), w(), h()); // prevent drawing outside widget area
     {
         // Draw to offscreen buffer to prevent flickering (double buffering)
-        const Fl_Offscreen offscreenBuffer = fl_create_offscreen(w(), h());
+        const Fl_Offscreen offscreenBuffer = fl_create_offscreen(x() + w(), y() + h());
         fl_begin_offscreen(offscreenBuffer);
         {
             drawBackground();
@@ -106,7 +106,7 @@ void LogDisplay::draw()
         fl_end_offscreen();
 
         // Copy offscreen buffer to the screen (swap buffers)
-        fl_copy_offscreen(x(), y(), w(), h(), offscreenBuffer, 0, 0);
+        fl_copy_offscreen(x(), y(), w(), h(), offscreenBuffer, x(), y());
 
         // Clean up
         fl_delete_offscreen(offscreenBuffer);
@@ -362,7 +362,7 @@ LogDisplay::EventStatus LogDisplay::handleMousePressed()
 
     if (Fl::event_inside(lineNumbersArea.x, lineNumbersArea.y, lineNumbersArea.w, lineNumbersArea.h))
     {
-        selectLine(Fl::event_y());
+        selectLine(getMouseY());
         damage(FL_DAMAGE_SCROLL);
         return EventStatus::Handled;
     }
@@ -373,36 +373,36 @@ LogDisplay::EventStatus LogDisplay::handleMousePressed()
 void LogDisplay::handleMousePressedOnTextArea()
 {
     take_focus();
-    cursorPos = getDataIndex(Fl::event_x(), Fl::event_y());
+    cursorPos = getDataIndex(getMouseX(), getMouseY());
 
     // Selection with a shift key being held
     if (Fl::event_shift())
     {
-        setSelectionEnd(Fl::event_x(), Fl::event_y());
+        setSelectionEnd(getMouseX(), getMouseY());
         damage(FL_DAMAGE_SCROLL);
         return;
     }
 
     // Windows recognizes the third click as a normal click, so I need to hand-craft the triple click with a timer
-    const bool windowsCompatTripleClick = Fl::seconds_since(lastDoubleClick) <= 0.5 &&
-                                          Fl::event_x() == doubleClickPos.x && Fl::event_y() == doubleClickPos.y;
+    const bool windowsCompatTripleClick =
+        Fl::seconds_since(lastDoubleClick) <= 0.5 && getMouseX() == doubleClickPos.x && getMouseY() == doubleClickPos.y;
 
     const bool doubleClick = Fl::event_clicks() == 1;
     const bool tripleClick = Fl::event_clicks() == 2 || windowsCompatTripleClick;
 
     if (tripleClick)
     {
-        selectLine(Fl::event_y());
+        selectLine(getMouseY());
     }
     else if (doubleClick)
     {
-        selectWord(Fl::event_x(), Fl::event_y());
+        selectWord(getMouseX(), getMouseY());
         lastDoubleClick = Fl::now();
-        doubleClickPos.x = Fl::event_x();
-        doubleClickPos.y = Fl::event_y();
+        doubleClickPos.x = getMouseX();
+        doubleClickPos.y = getMouseY();
     }
     else
-        setSelectionStart(Fl::event_x(), Fl::event_y());
+        setSelectionStart(getMouseX(), getMouseY());
 
     damage(FL_DAMAGE_SCROLL);
 }
@@ -411,12 +411,12 @@ LogDisplay::EventStatus LogDisplay::handleMouseDragged()
 {
     if (Fl::event_inside(lineNumbersArea.x, lineNumbersArea.y, lineNumbersArea.w, lineNumbersArea.h))
     {
-        const size_t row = getLineIndex(Fl::event_y());
+        const size_t row = getLineIndex(getMouseY());
         selection.end = lines[row].second + 1;
     }
     else
     {
-        setSelectionEnd(Fl::event_x(), Fl::event_y());
+        setSelectionEnd(getMouseX(), getMouseY());
     }
     cursorPos = selection.end;
     damage(FL_DAMAGE_SCROLL);
@@ -574,6 +574,16 @@ void LogDisplay::selectLine(const int mouseY)
     selection.begin = lineBegin;
     selection.end = lineEnd;
     cursorPos = selection.end;
+}
+
+int LogDisplay::getMouseX() const
+{
+    return Fl::event_x();
+}
+
+int LogDisplay::getMouseY() const
+{
+    return Fl::event_y();
 }
 
 size_t LogDisplay::getDataIndex(const int mouseX, const int mouseY) const

@@ -1,7 +1,7 @@
 #include "LogDisplay.hpp"
+#include "MenuBar.hpp"
 
 #include <FL/Fl.H>
-#include <FL/Fl_File_Chooser.H>
 #include <FL/Fl_Text_Display.H>
 #include <FL/Fl_Window.H>
 #include <cassert>
@@ -20,24 +20,27 @@ int main()
 {
     Fl::get_system_colors();
 
-    auto* window = new Fl_Window(600, 500);
+    // TODO: Move window to a separate class.
+    Fl_Window window(600, 500);
 
-    auto* logDisplay = new LogDisplay(0, 0, window->w(), window->h());
+    LogDisplay logDisplay(0, 25, window.w(), window.h() - 25);
     const std::string content = readFile("pan-tadeusz.txt");
-    logDisplay->setData(content.c_str(), content.size());
+    logDisplay.setData(content.c_str(), content.size());
+
+    MenuBar menu;
 
     // Center the window on the screen.
-    window->position((Fl::w() - window->w()) / 2, (Fl::h() - window->h()) / 2);
-    window->resizable(window);
-    window->end();
-    window->callback([](Fl_Widget* w, void*) {
+    window.position((Fl::w() - window.w()) / 2, (Fl::h() - window.h()) / 2);
+    window.resizable(logDisplay);
+    window.end();
+    window.callback([](Fl_Widget* w, void*) {
         // Default callback will hide the windows when ESC is pressed (FL_REASON_CANCELED).
         if (Fl::callback_reason() == FL_REASON_CLOSED)
         {
             w->hide();
         }
     });
-    window->show();
+    window.show();
 
     return Fl::run();
 }
