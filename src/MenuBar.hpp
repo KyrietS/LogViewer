@@ -1,45 +1,38 @@
 #pragma once
-#include <FL/Fl_Group.H>
 #include <FL/Fl_Menu_Bar.H>
 #include <FL/Fl_Native_File_Chooser.H>
 
-#include <cassert>
 #include <iostream>
-#include <memory>
 
-class MenuBar
+class MenuBar : public Fl_Menu_Bar
 {
   public:
-    MenuBar()
+    MenuBar(const int x, const int y, const int w, const int h) : Fl_Menu_Bar(x, y, w, h)
     {
-        const auto* window = Fl_Group::current();
-        assert(window != nullptr && "No current window");
-
-        menu = new Fl_Menu_Bar(0, 0, window->w(), 25);
-        menu->box(FL_FLAT_BOX);
-        menu->menu_box(FL_UP_BOX);
+        box(FL_FLAT_BOX);
+        menu_box(FL_UP_BOX);
         buildMenu();
     }
 
   private:
-    void buildMenu() const
+    void buildMenu()
     {
         void* noUserData = nullptr;
         Fl_Callback* noCallback = nullptr;
         constexpr int noShortcut = 0;
 
-        menu->add("File/@fileopen  Open File...", FL_CTRL + 'o', openFileDialog, noUserData, 0);
-        menu->add("File/@filesave  Save", FL_CTRL + 's', noCallback, noUserData, FL_MENU_INACTIVE);
-        menu->add("File/@filesaveas  Save As...", FL_CTRL + FL_SHIFT + 's', saveFileDialog, noUserData, 0);
-        menu->add("File/Close File", FL_CTRL + 'w', noCallback, noUserData, FL_MENU_INACTIVE);
-        menu->add("File/Settings", noShortcut, noCallback, noUserData, FL_MENU_INACTIVE | FL_MENU_DIVIDER);
-        menu->add("File/Quit", FL_CTRL + 'q', quitCallback);
-        menu->add("Search", noShortcut, noCallback, noUserData, FL_SUBMENU /* | FL_MENU_INACTIVE */);
-        menu->add("Search/Find", FL_CTRL + 'f', noCallback, noUserData, FL_MENU_INACTIVE);
-        menu->add("Search/Find All     ", FL_CTRL + FL_SHIFT + 'f', noCallback, noUserData, FL_MENU_INACTIVE);
-        menu->add("Search/Filter     ", FL_CTRL + 'g', noCallback, noUserData, FL_MENU_INACTIVE);
-        menu->add("Help/About    ", FL_F + 1, noCallback, noUserData, FL_MENU_INACTIVE);
-        menu->global();
+        add("File/@fileopen  Open File...", FL_CTRL + 'o', openFileDialog, noUserData, 0);
+        add("File/@filesave  Save", FL_CTRL + 's', noCallback, noUserData, FL_MENU_INACTIVE);
+        add("File/@filesaveas  Save As...", FL_CTRL + FL_SHIFT + 's', saveFileDialog, noUserData, 0);
+        add("File/Close File", FL_CTRL + 'w', noCallback, noUserData, FL_MENU_INACTIVE);
+        add("File/Settings", noShortcut, noCallback, noUserData, FL_MENU_INACTIVE | FL_MENU_DIVIDER);
+        add("File/Quit", FL_CTRL + 'q', quitCallback);
+        add("_Search", noShortcut, noCallback, noUserData, FL_SUBMENU /* | FL_MENU_INACTIVE */);
+        add("Search/Find", FL_CTRL + 'f', noCallback, noUserData, FL_MENU_INACTIVE);
+        add("Search/Find All     ", FL_CTRL + FL_SHIFT + 'f', noCallback, noUserData, FL_MENU_INACTIVE);
+        add("Search/Filter     ", FL_CTRL + 'g', noCallback, noUserData, FL_MENU_INACTIVE);
+        add("Help/About    ", FL_F + 1, noCallback, noUserData, FL_MENU_INACTIVE);
+        global();
     }
 
     static void quitCallback(Fl_Widget*, void*)
@@ -85,7 +78,4 @@ class MenuBar
             std::cout << "File Save OK: " << fileChooser.filename() << std::endl;
         }
     }
-
-    // The memory is managed by FLTK. No need to call delete manually.
-    Fl_Menu_Bar* menu;
 };
