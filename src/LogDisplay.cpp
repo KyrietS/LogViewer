@@ -167,6 +167,16 @@ LogDisplay::EventStatus LogDisplay::handleEvent(const int event)
     case FL_KEYBOARD:
         return handleKeyboard();
 
+    case FL_DND_ENTER:
+    case FL_DND_DRAG:
+    case FL_DND_RELEASE:
+        return EventStatus::Handled;
+
+    case FL_PASTE:
+        // TODO: Load new file to the project
+        std::cout << "Drag and dropped: " << Fl::event_text() << std::endl;
+        return EventStatus::Handled;
+
     default:
         return EventStatus::NotHandled;
     }
