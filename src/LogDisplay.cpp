@@ -35,7 +35,7 @@ int getMouseY()
 
 } // namespace
 
-LogDisplay::LogDisplay(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l)
+LogDisplay::LogDisplay(int X, int Y, int W, int H) : Fl_Group(X, Y, W, H)
 {
     vScrollBar = new Fl_Scrollbar(0, 0, 1, 1);
     vScrollBar->callback(reinterpret_cast<Fl_Callback*>(vScrollCallback), this);

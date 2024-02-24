@@ -14,7 +14,7 @@ class LogDisplay : public Fl_Group
     };
 
   public:
-    LogDisplay(int X, int Y, int W, int H, const char* l = nullptr);
+    LogDisplay(int X, int Y, int W, int H);
     ~LogDisplay() override;
 
     void setData(const char* data, size_t size);
