@@ -23,6 +23,16 @@ bool isWordSeparator(const char c)
     return wordSeparator.find(c) != std::string::npos;
 }
 
+int getMouseX()
+{
+    return Fl::event_x();
+}
+
+int getMouseY()
+{
+    return Fl::event_y();
+}
+
 } // namespace
 
 LogDisplay::LogDisplay(int X, int Y, int W, int H, const char* l) : Fl_Group(X, Y, W, H, l)
@@ -584,16 +594,6 @@ void LogDisplay::selectLine(const int mouseY)
     selection.begin = lineBegin;
     selection.end = lineEnd;
     cursorPos = selection.end;
-}
-
-int LogDisplay::getMouseX() const
-{
-    return Fl::event_x();
-}
-
-int LogDisplay::getMouseY() const
-{
-    return Fl::event_y();
 }
 
 size_t LogDisplay::getDataIndex(const int mouseX, const int mouseY) const

@@ -52,8 +52,6 @@ class LogDisplay : public Fl_Group
     void setSelectionEnd(int mouseX, int mouseY);
     void selectWord(int mouseX, int mouseY);
     void selectLine(int mouseY);
-    int getMouseX() const;
-    int getMouseY() const;
     size_t getDataIndex(int mouseX, int mouseY) const;
     size_t getLineIndex(int mouseY) const;
     size_t getIndexOfTopDisplayedLine() const;
