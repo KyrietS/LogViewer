@@ -4,10 +4,10 @@
 
 #include <iostream>
 
-class MenuBar : public Fl_Menu_Bar
+class MenuBarWidget : public Fl_Menu_Bar
 {
 public:
-    MenuBar(const int x, const int y, const int w, const int h) : Fl_Menu_Bar(x, y, w, h)
+    MenuBarWidget(const int x, const int y, const int w, const int h) : Fl_Menu_Bar(x, y, w, h)
     {
         box(FL_FLAT_BOX);
         menu_box(FL_UP_BOX);

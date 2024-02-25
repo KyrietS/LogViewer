@@ -1,6 +1,6 @@
-#include "LogDisplay.hpp"
-#include "MenuBar.hpp"
-#include "StatusBar.hpp"
+#include "widgets/LogDisplayWidget.hpp"
+#include "widgets/MenuBarWidget.hpp"
+#include "widgets/StatusBarWidget.hpp"
 
 #include <FL/Fl.H>
 #include <FL/Fl_Text_Display.H>
@@ -24,10 +24,10 @@ int main()
     // TODO: Move window to a separate class.
     Fl_Window window(600, 500);
 
-    const auto* menu = new MenuBar(0, 0, window.w(), 25);
-    const auto* statusBar = new StatusBar(0, window.h() - 25, window.w(), 25);
+    const auto* menu = new MenuBarWidget(0, 0, window.w(), 25);
+    const auto* statusBar = new StatusBarWidget(0, window.h() - 25, window.w(), 25);
 
-    auto* logDisplay = new LogDisplay(0, menu->h(), window.w(), window.h() - menu->h() - statusBar->h());
+    auto* logDisplay = new LogDisplayWidget(0, menu->h(), window.w(), window.h() - menu->h() - statusBar->h());
     const std::string content = readFile("pan-tadeusz.txt");
     logDisplay->setData(content.c_str(), content.size());
 

@@ -1,4 +1,4 @@
-#include "LogDisplay.hpp"
+#include "LogDisplayWidget.hpp"
 
 #include "FL/Fl_Window.H"
 #include "FL/fl_draw.H"
@@ -35,7 +35,7 @@ int getMouseY()
 
 } // namespace
 
-LogDisplay::LogDisplay(int X, int Y, int W, int H) : Fl_Group(X, Y, W, H)
+LogDisplayWidget::LogDisplayWidget(int X, int Y, int W, int H) : Fl_Group(X, Y, W, H)
 {
     vScrollBar = new Fl_Scrollbar(0, 0, 1, 1);
     vScrollBar->callback(reinterpret_cast<Fl_Callback*>(vScrollCallback), this);
@@ -57,9 +57,9 @@ LogDisplay::LogDisplay(int X, int Y, int W, int H) : Fl_Group(X, Y, W, H)
     end();
 }
 
-LogDisplay::~LogDisplay() = default;
+LogDisplayWidget::~LogDisplayWidget() = default;
 
-void LogDisplay::setData(const char* data, const size_t size)
+void LogDisplayWidget::setData(const char* data, const size_t size)
 {
     this->data = data;
     this->dataSize = size;
@@ -91,12 +91,12 @@ void LogDisplay::setData(const char* data, const size_t size)
     vScrollBar->value(1, howManyLinesCanFit(), 1, numberOfLines);
 }
 
-const char* LogDisplay::getData() const
+const char* LogDisplayWidget::getData() const
 {
     return data;
 }
 
-void LogDisplay::draw()
+void LogDisplayWidget::draw()
 {
     recalcSize();
     fl_push_clip(x(), y(), w(), h()); // prevent drawing outside widget area
@@ -124,13 +124,13 @@ void LogDisplay::draw()
     fl_pop_clip();
 }
 
-void LogDisplay::drawBackground() const
+void LogDisplayWidget::drawBackground() const
 {
     fl_rectf(x(), y(), w(), h(), color());
     draw_box();
 }
 
-int LogDisplay::handle(const int event)
+int LogDisplayWidget::handle(const int event)
 {
     // I will pass the event to child widgets but I will not return early if they handled it.
     // No matter the result I will always continue to handle the event in this parent widget.
@@ -145,7 +145,7 @@ int LogDisplay::handle(const int event)
     return static_cast<int>(handleEvent(event)) | childHandled;
 }
 
-LogDisplay::EventStatus LogDisplay::handleEvent(const int event)
+LogDisplayWidget::EventStatus LogDisplayWidget::handleEvent(const int event)
 {
     switch (event)
     {
@@ -192,7 +192,7 @@ LogDisplay::EventStatus LogDisplay::handleEvent(const int event)
     }
 }
 
-void LogDisplay::drawText()
+void LogDisplayWidget::drawText()
 {
     if (data == nullptr || lines.empty())
     {
@@ -245,7 +245,7 @@ void LogDisplay::drawText()
     }
 }
 
-void LogDisplay::drawSelection(const size_t startPos, const size_t endPos, const int baseline) const
+void LogDisplayWidget::drawSelection(const size_t startPos, const size_t endPos, const int baseline) const
 {
     auto selectionStart = selection.begin;
     auto selectionEnd = selection.end;
@@ -272,7 +272,7 @@ void LogDisplay::drawSelection(const size_t startPos, const size_t endPos, const
                  static_cast<int>(selectionWidth), lineHeight);
     }
 }
-void LogDisplay::drawTextLine(const size_t lineBegin, const size_t lineEnd, const int baseline) const
+void LogDisplayWidget::drawTextLine(const size_t lineBegin, const size_t lineEnd, const int baseline) const
 {
     const auto& lineLength = static_cast<int>(lineEnd - lineBegin);
 
@@ -318,7 +318,7 @@ void LogDisplay::drawTextLine(const size_t lineBegin, const size_t lineEnd, cons
     fl_draw(data + selectedLineEnd, afterSelectionLength, textPosition + afterSelectionOffset, baseline);
 }
 
-void LogDisplay::drawLineNumber(const int lineNumber, const int baseline, const Fl_Color bgcolor) const
+void LogDisplayWidget::drawLineNumber(const int lineNumber, const int baseline, const Fl_Color bgcolor) const
 {
     const int lineHeight = getLineHeight();
     fl_push_clip(lineNumbersArea.x, lineNumbersArea.y, lineNumbersArea.w, lineNumbersArea.h);
@@ -332,7 +332,7 @@ void LogDisplay::drawLineNumber(const int lineNumber, const int baseline, const 
     fl_pop_clip();
 }
 
-void LogDisplay::recalcSize()
+void LogDisplayWidget::recalcSize()
 {
     const int X = x() + Fl::box_dx(box());
     const int Y = y() + Fl::box_dy(box());
@@ -359,7 +359,7 @@ void LogDisplay::recalcSize()
     hScrollBar->value(hScrollBar->value(), textArea.w, 1, maxLineWidth);
 }
 
-int LogDisplay::calcLineNumberWidth() const
+int LogDisplayWidget::calcLineNumberWidth() const
 {
     const size_t numOfLines = lines.size();
     std::string maxLineNumber = std::to_string(numOfLines);
@@ -372,7 +372,7 @@ int LogDisplay::calcLineNumberWidth() const
     return static_cast<int>(std::ceil(fl_width(maxLineNumber.c_str(), static_cast<int>(maxLineNumber.size()))));
 }
 
-LogDisplay::EventStatus LogDisplay::handleMousePressed()
+LogDisplayWidget::EventStatus LogDisplayWidget::handleMousePressed()
 {
     if (Fl::event_inside(textArea.x, textArea.y, textArea.w, textArea.h))
     {
@@ -390,7 +390,7 @@ LogDisplay::EventStatus LogDisplay::handleMousePressed()
     return EventStatus::NotHandled;
 }
 
-void LogDisplay::handleMousePressedOnTextArea()
+void LogDisplayWidget::handleMousePressedOnTextArea()
 {
     take_focus();
     cursorPos = getDataIndex(getMouseX(), getMouseY());
@@ -427,7 +427,7 @@ void LogDisplay::handleMousePressedOnTextArea()
     damage(FL_DAMAGE_SCROLL);
 }
 
-LogDisplay::EventStatus LogDisplay::handleMouseDragged()
+LogDisplayWidget::EventStatus LogDisplayWidget::handleMouseDragged()
 {
     if (Fl::event_inside(lineNumbersArea.x, lineNumbersArea.y, lineNumbersArea.w, lineNumbersArea.h))
     {
@@ -443,7 +443,7 @@ LogDisplay::EventStatus LogDisplay::handleMouseDragged()
     return EventStatus::Handled;
 }
 
-LogDisplay::EventStatus LogDisplay::handleMouseScrolled() const
+LogDisplayWidget::EventStatus LogDisplayWidget::handleMouseScrolled() const
 {
     if (Fl::event_inside(this))
     {
@@ -452,7 +452,7 @@ LogDisplay::EventStatus LogDisplay::handleMouseScrolled() const
 
     return EventStatus::NotHandled;
 }
-LogDisplay::EventStatus LogDisplay::handleMouseMoved() const
+LogDisplayWidget::EventStatus LogDisplayWidget::handleMouseMoved() const
 {
     if (Fl::event_inside(textArea.x, textArea.y, textArea.w, textArea.h))
     {
@@ -464,7 +464,7 @@ LogDisplay::EventStatus LogDisplay::handleMouseMoved() const
     return EventStatus::NotHandled;
 }
 
-LogDisplay::EventStatus LogDisplay::handleKeyboard()
+LogDisplayWidget::EventStatus LogDisplayWidget::handleKeyboard()
 {
     // Ctrl + C
     if (Fl::event_ctrl() && Fl::event_key() == 'c')
@@ -484,50 +484,50 @@ LogDisplay::EventStatus LogDisplay::handleKeyboard()
     return EventStatus::NotHandled;
 }
 
-std::string_view LogDisplay::getSelectedText() const
+std::string_view LogDisplayWidget::getSelectedText() const
 {
     const size_t selectionStart = std::min(selection.begin, selection.end);
     const size_t selectionEnd = std::max(selection.begin, selection.end);
     return {data + selectionStart, selectionEnd - selectionStart};
 }
 
-void LogDisplay::copySelectionToClipboard() const
+void LogDisplayWidget::copySelectionToClipboard() const
 {
     constexpr int clipboardDestination = 1; // 0 = selection buffer, 1 = clipboard, 2 = both
     const std::string_view selectedText = getSelectedText();
     Fl::copy(selectedText.data(), static_cast<int>(selectedText.length()), clipboardDestination);
 }
 
-void LogDisplay::setCursor(const Fl_Cursor cursorType) const
+void LogDisplayWidget::setCursor(const Fl_Cursor cursorType) const
 {
     if (window())
     {
         window()->cursor(cursorType);
     }
 }
-int LogDisplay::howManyLinesCanFit() const
+int LogDisplayWidget::howManyLinesCanFit() const
 {
     return textArea.h / getLineHeight();
 }
 
-size_t LogDisplay::getIndexOfTopDisplayedLine() const
+size_t LogDisplayWidget::getIndexOfTopDisplayedLine() const
 {
     const int index = vScrollBar->value() - 1;
     assert(index >= 0);
     return index;
 }
 
-int LogDisplay::getHorizontalOffset() const
+int LogDisplayWidget::getHorizontalOffset() const
 {
     return hScrollBar->value() - 1;
 }
 
-int LogDisplay::getLineHeight() const
+int LogDisplayWidget::getLineHeight() const
 {
     return fl_height(textFont, textSize);
 }
 
-void LogDisplay::findAndSetGlobalMaxLineWidth()
+void LogDisplayWidget::findAndSetGlobalMaxLineWidth()
 {
     double maxLineLength = 0;
     for (const auto& [lineBegin, lineEnd] : lines)
@@ -540,7 +540,7 @@ void LogDisplay::findAndSetGlobalMaxLineWidth()
     maxLineWidth = static_cast<int>(maxLineLength);
 }
 
-void LogDisplay::updateMaxLineWidth(const size_t lineIndex)
+void LogDisplayWidget::updateMaxLineWidth(const size_t lineIndex)
 {
     const auto [lineBegin, lineEnd] = lines[lineIndex];
     const size_t lineLength = lineEnd - lineBegin;
@@ -553,20 +553,20 @@ void LogDisplay::updateMaxLineWidth(const size_t lineIndex)
     }
 }
 
-void LogDisplay::setSelectionStart(const int mouseX, const int mouseY)
+void LogDisplayWidget::setSelectionStart(const int mouseX, const int mouseY)
 {
     const size_t selectionStartIndex = getDataIndex(mouseX, mouseY);
     selection.begin = selectionStartIndex;
     selection.end = selectionStartIndex;
 }
 
-void LogDisplay::setSelectionEnd(const int mouseX, const int mouseY)
+void LogDisplayWidget::setSelectionEnd(const int mouseX, const int mouseY)
 {
     const size_t selectionEndIndex = getDataIndex(mouseX, mouseY);
     selection.end = selectionEndIndex;
 }
 
-void LogDisplay::selectWord(const int mouseX, const int mouseY)
+void LogDisplayWidget::selectWord(const int mouseX, const int mouseY)
 {
     const size_t selectionEndIndex = getDataIndex(mouseX, mouseY);
 
@@ -586,7 +586,7 @@ void LogDisplay::selectWord(const int mouseX, const int mouseY)
     selection.end = selectionEnd;
     cursorPos = selection.end;
 }
-void LogDisplay::selectLine(const int mouseY)
+void LogDisplayWidget::selectLine(const int mouseY)
 {
     const size_t row = getLineIndex(mouseY);
     const size_t lineBegin = lines[row].first;
@@ -596,13 +596,13 @@ void LogDisplay::selectLine(const int mouseY)
     cursorPos = selection.end;
 }
 
-size_t LogDisplay::getDataIndex(const int mouseX, const int mouseY) const
+size_t LogDisplayWidget::getDataIndex(const int mouseX, const int mouseY) const
 {
     const size_t lineIndex = getLineIndex(mouseY);
     return getDataIndexInGivenLine(lineIndex, mouseX);
 }
 
-size_t LogDisplay::getLineIndex(const int mouseY) const
+size_t LogDisplayWidget::getLineIndex(const int mouseY) const
 {
     if (mouseY < textArea.y)
     {
@@ -632,7 +632,7 @@ size_t LogDisplay::getLineIndex(const int mouseY) const
 }
 
 // Return the index of the character in a line pointed by the mouse.
-size_t LogDisplay::getDataIndexInGivenLine(const size_t lineIndex, const int mouseX) const
+size_t LogDisplayWidget::getDataIndexInGivenLine(const size_t lineIndex, const int mouseX) const
 {
     if (lineIndex >= lines.size())
     {
@@ -666,12 +666,12 @@ size_t LogDisplay::getDataIndexInGivenLine(const size_t lineIndex, const int mou
     return lineEnd;
 }
 
-void LogDisplay::vScrollCallback(Fl_Scrollbar*, LogDisplay* pThis)
+void LogDisplayWidget::vScrollCallback(Fl_Scrollbar*, LogDisplayWidget* pThis)
 {
     pThis->damage(FL_DAMAGE_SCROLL);
 }
 
-void LogDisplay::hScrollCallback(Fl_Scrollbar*, LogDisplay* pThis)
+void LogDisplayWidget::hScrollCallback(Fl_Scrollbar*, LogDisplayWidget* pThis)
 {
     pThis->damage(FL_DAMAGE_SCROLL);
 }

@@ -1,11 +1,10 @@
 #pragma once
 #include <FL/Fl_Group.H>
 #include <FL/Fl_Scrollbar.H>
-#include <memory>
 #include <string>
 #include <vector>
 
-class LogDisplay : public Fl_Group
+class LogDisplayWidget : public Fl_Group
 {
     enum class EventStatus : int
     {
@@ -14,8 +13,8 @@ class LogDisplay : public Fl_Group
     };
 
 public:
-    LogDisplay(int X, int Y, int W, int H);
-    ~LogDisplay() override;
+    LogDisplayWidget(int X, int Y, int W, int H);
+    ~LogDisplayWidget() override;
 
     void setData(const char* data, size_t size);
     const char* getData() const;
@@ -60,8 +59,8 @@ private:
     std::string_view getSelectedText() const;
     void copySelectionToClipboard() const;
 
-    static void vScrollCallback(Fl_Scrollbar* w, LogDisplay* pThis);
-    static void hScrollCallback(Fl_Scrollbar* w, LogDisplay* pThis);
+    static void vScrollCallback(Fl_Scrollbar* w, LogDisplayWidget* pThis);
+    static void hScrollCallback(Fl_Scrollbar* w, LogDisplayWidget* pThis);
 
     // Text area within the widget
     struct
