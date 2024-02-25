@@ -28,6 +28,7 @@ target_include_directories(LogAlligator PRIVATE src)
 target_include_directories(LogAlligator PRIVATE ${fltk_SOURCE_DIR})
 target_include_directories(LogAlligator PRIVATE ${fltk_BINARY_DIR})
 target_link_libraries(LogAlligator fltk)
+source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/src FILES ${SOURCES})
 
 if (MSVC)
     target_compile_options(LogAlligator PRIVATE /W4)

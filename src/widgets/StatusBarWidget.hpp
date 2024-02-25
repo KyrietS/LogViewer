@@ -4,6 +4,7 @@
 #include <FL/Fl_Flex.H>
 #include <FL/fl_draw.H>
 #include <cassert>
+#include <string>
 
 struct Separator : Fl_Widget
 {
