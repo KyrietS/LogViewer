@@ -1,6 +1,7 @@
 #pragma once
 #include "widgets/LogDisplayWidget.hpp"
 #include "widgets/MenuBarWidget.hpp"
+#include "widgets/SearchBarWidget.hpp"
 #include "widgets/StatusBarWidget.hpp"
 #include <FL/Fl_Window.H>
 
@@ -8,12 +9,14 @@ namespace
 {
 constexpr int MENU_BAR_HEIGHT = 25;
 constexpr int STATUS_BAR_HEIGHT = 25;
+constexpr int SEARCH_BAR_HEIGHT = 25;
 } // namespace
 
 struct AppContext
 {
     Fl_Window* window;
     MenuBarWidget* menuBar;
+    SearchBarWidget* searchBar;
     StatusBarWidget* statusBar;
     LogDisplayWidget* logDisplay;
 };
@@ -25,6 +28,7 @@ public:
     {
         createWindowWidget();
         createMenuBarWidget();
+        createSearchBarWidget();
         createStatusBarWidget();
         createLogDisplayWidget();
 
@@ -67,6 +71,21 @@ private:
         window->end();
     }
 
+    void createSearchBarWidget()
+    {
+        auto window = context.window;
+        window->begin();
+        context.searchBar = new SearchBarWidget(0, MENU_BAR_HEIGHT, window->w(), SEARCH_BAR_HEIGHT);
+        window->end();
+
+        context.searchBar->onClose([this] {
+            const auto window = context.window;
+            context.searchBar->hide();
+            context.logDisplay->resize(0, MENU_BAR_HEIGHT, window->w(),
+                                       window->h() - MENU_BAR_HEIGHT - STATUS_BAR_HEIGHT);
+        });
+    }
+
     void createStatusBarWidget()
     {
         auto window = context.window;
@@ -79,8 +98,9 @@ private:
     {
         auto window = context.window;
         window->begin();
-        context.logDisplay =
-            new LogDisplayWidget(0, MENU_BAR_HEIGHT, window->w(), window->h() - MENU_BAR_HEIGHT - STATUS_BAR_HEIGHT);
+        constexpr int widgetTopOffset = MENU_BAR_HEIGHT + SEARCH_BAR_HEIGHT;
+        const int widgetHeight = window->h() - MENU_BAR_HEIGHT - STATUS_BAR_HEIGHT - SEARCH_BAR_HEIGHT;
+        context.logDisplay = new LogDisplayWidget(0, widgetTopOffset, window->w(), widgetHeight);
         window->resizable(context.logDisplay);
         window->end();
 
