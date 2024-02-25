@@ -40,6 +40,7 @@ public:
     {
         context.logDisplay->setData(data, size);
         context.statusBar->setNumberOfLines(context.logDisplay->getLines().size());
+        context.statusBar->setStatusInformation("File loaded successfully");
     }
 
 private:

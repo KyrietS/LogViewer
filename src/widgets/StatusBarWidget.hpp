@@ -39,7 +39,7 @@ public:
         new Fl_Box(0, 0, 0, 0, "");
 
         addSeparator();
-        addFixedLabel("File loaded successfully");
+        statusInfo = addFixedLabel(" ");
         addMargin();
 
         Fl_Flex::end();
@@ -59,6 +59,11 @@ public:
         updateFileStats();
     }
 
+    void setStatusInformation( const std::string& text )
+    {
+        setLabelText(statusInfo, text);
+    }
+
 private:
     void addFileStats()
     {
@@ -72,7 +77,6 @@ private:
                                           "    col : " + std::to_string(currentColumn) +
                                           "    pos : " + std::to_string(currentPosition);
         setLabelText(fileStats, fileStatsText);
-        damage(FL_DAMAGE_ALL);
     }
 
     Fl_Box* addFixedLabel(const std::string& text)
@@ -90,6 +94,7 @@ private:
         int height = 0;
         label->measure_label(width, height);
         fixed(label, width);
+        damage(FL_DAMAGE_ALL);
     }
 
     void addSeparator()
@@ -106,6 +111,7 @@ private:
     }
 
     Fl_Box* fileStats = nullptr;
+    Fl_Box* statusInfo = nullptr;
     size_t numberOfLines = 0;
     size_t currentLine = 0;
     size_t currentColumn = 0;
