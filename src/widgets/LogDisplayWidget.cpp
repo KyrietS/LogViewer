@@ -106,6 +106,25 @@ const std::vector<std::pair<size_t, size_t>>& LogDisplayWidget::getLines() const
     return lines;
 }
 
+// TODO: In the future I should add highlight and select as a separate methods.
+// The first one should be used to highlight a word in a given color without
+// changing the cursor position and selection. The second would overwrite the
+// current selection and move the cursor to the end of the selection.
+// The current implementation overwrites the selection but does not move the
+// cursor. This is not the ultimate implementation.
+void LogDisplayWidget::select(size_t startPos, size_t endPos)
+{
+    selection.begin = startPos;
+    selection.end = endPos;
+    take_focus();
+}
+
+void LogDisplayWidget::scrollToLine(size_t lineIndex)
+{
+    vScrollBar->value(lineIndex + 1);
+    damage(FL_DAMAGE_SCROLL);
+}
+
 void LogDisplayWidget::onCursorPositionChanged(std::function<void(size_t, size_t)> callback)
 {
     onCursorPositionChangedCallback = std::move(callback);

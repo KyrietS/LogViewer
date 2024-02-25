@@ -22,6 +22,9 @@ public:
     size_t getDataSize() const;
     const std::vector<std::pair<size_t, size_t>>& getLines() const;
 
+    void select(size_t startPos, size_t endPos);
+    void scrollToLine(size_t lineIndex);
+
     // Set callback for onCursorPositionChanged event.
     // The callback receives the index of the line where the cursor is
     // and the index of the character in that line after the cursor.

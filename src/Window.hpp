@@ -78,6 +78,8 @@ private:
         context.searchBar = new SearchBarWidget(0, MENU_BAR_HEIGHT, window->w(), SEARCH_BAR_HEIGHT);
         window->end();
 
+        context.searchBar->onSearch([this](const std::string& query) { search(query); });
+
         context.searchBar->onClose([this] {
             const auto window = context.window;
             context.searchBar->hide();
@@ -110,6 +112,31 @@ private:
             statusBar->setCursorPosition(lineIndex + 1, charIndex, line.first + charIndex);
         });
     }
+
+    void search( const std::string& query )
+    {
+        auto& logDisplay = context.logDisplay;
+        const auto& lines = logDisplay->getLines();
+        const auto& data = logDisplay->getData();
+
+        for (size_t lineIndex = 0; lineIndex < lines.size(); lineIndex++)
+        {
+            auto [lineBegin, lineEnd] = lines[lineIndex];
+            std::string_view line(data + lineBegin, lineEnd - lineBegin);
+            size_t pos = line.find(query);
+            if (pos != std::string_view::npos)
+            {
+                size_t begin = lineBegin + pos;
+                size_t end = begin + query.size();
+                logDisplay->select(begin, end);
+                logDisplay->scrollToLine(lineIndex);
+                context.statusBar->setStatusInformation("Match found: " + query);
+                return;
+            }
+        }
+
+        context.statusBar->setStatusInformation("No matches found: " + query);
+	}
 
     AppContext context{};
 };
