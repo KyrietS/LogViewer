@@ -59,7 +59,7 @@ public:
         updateFileStats();
     }
 
-    void setStatusInformation( const std::string& text )
+    void setStatusInformation(const std::string& text)
     {
         setLabelText(statusInfo, text);
     }

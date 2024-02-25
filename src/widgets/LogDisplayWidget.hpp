@@ -1,9 +1,9 @@
 #pragma once
 #include <FL/Fl_Group.H>
 #include <FL/Fl_Scrollbar.H>
+#include <functional>
 #include <string>
 #include <vector>
-#include <functional>
 
 class LogDisplayWidget : public Fl_Group
 {
