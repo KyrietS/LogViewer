@@ -128,6 +128,9 @@ void LogDisplayWidget::drawBackground() const
 {
     fl_rectf(x(), y(), w(), h(), color());
     draw_box();
+
+    // draw that little box in the corner of the scrollbars
+    fl_rectf(hScrollBar->x() + hScrollBar->w(), hScrollBar->y(), vScrollBar->w(), hScrollBar->h(), FL_BACKGROUND_COLOR);
 }
 
 int LogDisplayWidget::handle(const int event)
@@ -147,6 +150,11 @@ int LogDisplayWidget::handle(const int event)
 
 LogDisplayWidget::EventStatus LogDisplayWidget::handleEvent(const int event)
 {
+    if (lines.empty() && event != FL_DND_ENTER && event != FL_DND_DRAG && event != FL_DND_RELEASE && event != FL_PASTE)
+    {
+        return EventStatus::NotHandled;
+    }
+
     switch (event)
     {
     case FL_PUSH:
@@ -213,9 +221,6 @@ void LogDisplayWidget::drawText()
 
     // draw the background for line numbers on the left
     fl_rectf(lineNumbersArea.x, lineNumbersArea.y, lineNumbersArea.w, lineNumbersArea.h, lineNumbersBgColor);
-
-    // draw that little box in the corner of the scrollbars
-    fl_rectf(hScrollBar->x() + hScrollBar->w(), hScrollBar->y(), vScrollBar->w(), hScrollBar->h(), FL_BACKGROUND_COLOR);
 
     for (size_t lineIndex = topLineIndex; lineIndex < bottomLineIndex; ++lineIndex)
     {
