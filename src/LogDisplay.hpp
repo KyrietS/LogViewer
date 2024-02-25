@@ -13,18 +13,18 @@ class LogDisplay : public Fl_Group
         Handled = 1
     };
 
-  public:
+public:
     LogDisplay(int X, int Y, int W, int H);
     ~LogDisplay() override;
 
     void setData(const char* data, size_t size);
     const char* getData() const;
 
-  protected:
+protected:
     void draw() override;
     int handle(int event) override;
 
-  private:
+private:
     void drawBackground() const;
     void drawText();
     void drawSelection(size_t startPos, size_t endPos, int baseline) const;

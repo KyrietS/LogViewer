@@ -22,7 +22,7 @@ struct Separator : Fl_Widget
 
 class StatusBar : public Fl_Flex
 {
-  public:
+public:
     StatusBar(const int x, const int y, const int w, const int h) : Fl_Flex(x, y, w, h, HORIZONTAL)
     {
         box(FL_FLAT_BOX);
@@ -50,7 +50,7 @@ class StatusBar : public Fl_Flex
         updateFileStats();
     }
 
-  private:
+private:
     void addFileStats()
     {
         fileStats = addFixedLabel("");

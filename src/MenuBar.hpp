@@ -6,7 +6,7 @@
 
 class MenuBar : public Fl_Menu_Bar
 {
-  public:
+public:
     MenuBar(const int x, const int y, const int w, const int h) : Fl_Menu_Bar(x, y, w, h)
     {
         box(FL_FLAT_BOX);
@@ -14,7 +14,7 @@ class MenuBar : public Fl_Menu_Bar
         buildMenu();
     }
 
-  private:
+private:
     void buildMenu()
     {
         void* noUserData = nullptr;
