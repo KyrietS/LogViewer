@@ -96,6 +96,21 @@ const char* LogDisplayWidget::getData() const
     return data;
 }
 
+size_t LogDisplayWidget::getDataSize() const
+{
+    return dataSize;
+}
+
+const std::vector<std::pair<size_t, size_t>>& LogDisplayWidget::getLines() const
+{
+    return lines;
+}
+
+void LogDisplayWidget::onCursorPositionChanged(std::function<void(size_t, size_t)> callback)
+{
+    onCursorPositionChangedCallback = std::move(callback);
+}
+
 void LogDisplayWidget::draw()
 {
     recalcSize();
@@ -230,7 +245,7 @@ void LogDisplayWidget::drawText()
         fl_push_clip(textArea.x, textArea.y, textArea.w, textArea.h);
 
         // Clear line
-        const bool isCursorInThisLine = startPos <= cursorPos && cursorPos <= endPos;
+        const bool isCursorInThisLine = lineIndex == cursorPos.line;
         const Fl_Color bgcolor = isCursorInThisLine ? FL_DARK1 : color();
         fl_color(bgcolor);
         fl_rectf(textArea.x, baseline - lineHeight + fl_descent(), textArea.w, lineHeight);
@@ -398,7 +413,7 @@ LogDisplayWidget::EventStatus LogDisplayWidget::handleMousePressed()
 void LogDisplayWidget::handleMousePressedOnTextArea()
 {
     take_focus();
-    cursorPos = getDataIndex(getMouseX(), getMouseY());
+    setCursorPos(getDataIndex(getMouseX(), getMouseY()), getLineIndex(getMouseY()));
 
     // Selection with a shift key being held
     if (Fl::event_shift())
@@ -438,12 +453,13 @@ LogDisplayWidget::EventStatus LogDisplayWidget::handleMouseDragged()
     {
         const size_t row = getLineIndex(getMouseY());
         selection.end = lines[row].second + 1;
+        setCursorPos(selection.end, row + 1);
     }
     else
     {
         setSelectionEnd(getMouseX(), getMouseY());
+        setCursorPos(selection.end, getLineIndex(getMouseY()));
     }
-    cursorPos = selection.end;
     damage(FL_DAMAGE_SCROLL);
     return EventStatus::Handled;
 }
@@ -558,6 +574,19 @@ void LogDisplayWidget::updateMaxLineWidth(const size_t lineIndex)
     }
 }
 
+// TODO: Consider taking only dataIndex and calculating lineIndex inside this function
+// This will need a binary search or some other optimization
+void LogDisplayWidget::setCursorPos(size_t dataIndex, size_t lineIndex)
+{
+    cursorPos.pos = dataIndex;
+    cursorPos.line = lineIndex;
+
+    if( onCursorPositionChangedCallback )
+    {
+        onCursorPositionChangedCallback(lineIndex, dataIndex - lines[lineIndex].first);
+    }
+}
+
 void LogDisplayWidget::setSelectionStart(const int mouseX, const int mouseY)
 {
     const size_t selectionStartIndex = getDataIndex(mouseX, mouseY);
@@ -589,7 +618,7 @@ void LogDisplayWidget::selectWord(const int mouseX, const int mouseY)
     }
     selection.begin = selectionBegin;
     selection.end = selectionEnd;
-    cursorPos = selection.end;
+    setCursorPos(selection.end, getLineIndex(mouseY));
 }
 void LogDisplayWidget::selectLine(const int mouseY)
 {
@@ -598,7 +627,7 @@ void LogDisplayWidget::selectLine(const int mouseY)
     const size_t lineEnd = lines[row].second + 1; // including newline character
     selection.begin = lineBegin;
     selection.end = lineEnd;
-    cursorPos = selection.end;
+    setCursorPos(selection.end, row + 1);
 }
 
 size_t LogDisplayWidget::getDataIndex(const int mouseX, const int mouseY) const
@@ -621,16 +650,18 @@ size_t LogDisplayWidget::getLineIndex(const int mouseY) const
     const int mousePos = mouseY - textArea.y; // relative to text area
     const int howManyLines = howManyLinesCanFit() + 1;
     const int lineHeight = getLineHeight();
+    const int topLineIndex = getIndexOfTopDisplayedLine();
     int rowBegin = 0;
     int rowEnd = rowBegin;
 
+    // TODO: binary search
     for (int i = 0; i < howManyLines; i++)
     {
         rowBegin = rowEnd;
         rowEnd += lineHeight;
         if (mousePos >= rowBegin && mousePos <= rowEnd)
         {
-            return i + getIndexOfTopDisplayedLine();
+            return i + topLineIndex;
         }
     }
     return 0;

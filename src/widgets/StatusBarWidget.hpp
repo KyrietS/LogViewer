@@ -45,6 +45,14 @@ public:
         Fl_Flex::end();
     }
 
+    void setCursorPosition(const size_t lineNumber, const size_t columnNumber, const size_t globalOffset)
+    {
+        currentLine = lineNumber;
+        currentColumn = columnNumber;
+        currentPosition = globalOffset;
+        updateFileStats();
+    }
+
     void setNumberOfLines(const size_t lines)
     {
         numberOfLines = lines;
@@ -60,8 +68,11 @@ private:
     void updateFileStats()
     {
         assert(fileStats != nullptr);
-        const std::string fileStatsText = "ln : 0/" + std::to_string(numberOfLines) + "    col : 0    pos : 0";
+        const std::string fileStatsText = "ln : " + std::to_string(currentLine) + "/" + std::to_string(numberOfLines) +
+                                          "    col : " + std::to_string(currentColumn) +
+                                          "    pos : " + std::to_string(currentPosition);
         setLabelText(fileStats, fileStatsText);
+        damage(FL_DAMAGE_ALL);
     }
 
     Fl_Box* addFixedLabel(const std::string& text)
@@ -95,5 +106,8 @@ private:
     }
 
     Fl_Box* fileStats = nullptr;
-    size_t numberOfLines = 123;
+    size_t numberOfLines = 0;
+    size_t currentLine = 0;
+    size_t currentColumn = 0;
+    size_t currentPosition = 0;
 };

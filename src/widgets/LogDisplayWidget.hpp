@@ -3,6 +3,7 @@
 #include <FL/Fl_Scrollbar.H>
 #include <string>
 #include <vector>
+#include <functional>
 
 class LogDisplayWidget : public Fl_Group
 {
@@ -18,6 +19,13 @@ public:
 
     void setData(const char* data, size_t size);
     const char* getData() const;
+    size_t getDataSize() const;
+    const std::vector<std::pair<size_t, size_t>>& getLines() const;
+
+    // Set callback for onCursorPositionChanged event.
+    // The callback receives the index of the line where the cursor is
+    // and the index of the character in that line after the cursor.
+    void onCursorPositionChanged(std::function<void(size_t, size_t)>);
 
 protected:
     void draw() override;
@@ -47,6 +55,7 @@ private:
     void findAndSetGlobalMaxLineWidth(); // This is slow, dont use for files with more than million lines
     void updateMaxLineWidth(size_t lineIndex);
 
+    void setCursorPos(size_t dataIndex, size_t lineIndex);
     void setSelectionStart(int mouseX, int mouseY);
     void setSelectionEnd(int mouseX, int mouseY);
     void selectWord(int mouseX, int mouseY);
@@ -88,7 +97,10 @@ private:
 
     // Cursor position
     // The cursor is not visible, but it is used internally
-    size_t cursorPos = 0;
+    struct
+    {
+        size_t pos, line;
+    } cursorPos{0, 0};
 
     // This needs to be cached because to get this value
     // we need to measure the width of each line of text.
@@ -113,4 +125,7 @@ private:
     // Child widgets (will be deleted from memory by Fl_Group desctructor)
     Fl_Scrollbar* vScrollBar;
     Fl_Scrollbar* hScrollBar;
+
+    // Callbacks
+    std::function<void(size_t, size_t)> onCursorPositionChangedCallback;
 };
