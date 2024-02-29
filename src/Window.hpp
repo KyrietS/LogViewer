@@ -113,7 +113,7 @@ private:
         });
     }
 
-    void search( const std::string& query )
+    void search(const std::string& query)
     {
         auto& logDisplay = context.logDisplay;
         const auto& lines = logDisplay->getLines();
@@ -136,7 +136,7 @@ private:
         }
 
         context.statusBar->setStatusInformation("No matches found: " + query);
-	}
+    }
 
     AppContext context{};
 };
