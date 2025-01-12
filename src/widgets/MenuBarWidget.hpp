@@ -45,7 +45,7 @@ private:
         Fl_Native_File_Chooser fileChooser;
         fileChooser.title(nullptr);
         fileChooser.type(Fl_Native_File_Chooser::BROWSE_FILE);
-        fileChooser.filter("Log Files\t*.log\nLog Alligator Project\t*.laproj");
+        fileChooser.filter("Log Files\t*.log\nLog Viewer Project\t*.lvproj");
         switch (fileChooser.show())
         {
         case -1:
@@ -65,7 +65,7 @@ private:
         fileChooser.title(nullptr);
         fileChooser.type(Fl_Native_File_Chooser::BROWSE_SAVE_FILE);
         fileChooser.options(Fl_Native_File_Chooser::SAVEAS_CONFIRM); // Confirm file overwrite.
-        fileChooser.filter("Log Alligator Project\t*.laproj");
+        fileChooser.filter("Log Viewer Project\t*.lvproj");
         switch (fileChooser.show())
         {
         case -1:
