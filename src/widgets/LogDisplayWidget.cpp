@@ -600,7 +600,7 @@ void LogDisplayWidget::setCursorPos(size_t dataIndex, size_t lineIndex)
     cursorPos.pos = dataIndex;
     cursorPos.line = lineIndex;
 
-    if (onCursorPositionChangedCallback)
+    if (onCursorPositionChangedCallback && lineIndex < lines.size())
     {
         onCursorPositionChangedCallback(lineIndex, dataIndex - lines[lineIndex].first);
     }
